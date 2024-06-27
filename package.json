@@ -1,0 +1,38 @@
+{
+  "name": "draw_room",
+  "version": "0.0.0",
+  "description": "draw room project is to make space for setting up furnitures and enable the user to guess the space where they visit\"",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.9",
+    "@types/react": "18.3.3",
+    "typescript": "^5.5.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ksheyon123/design-room.git"
+  },
+  "keywords": [
+    "react",
+    "next",
+    "typescript",
+    "threejs"
+  ],
+  "author": "kshyeon123",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ksheyon123/design-room/issues"
+  },
+  "homepage": "https://github.com/ksheyon123/design-room#readme"
+}
