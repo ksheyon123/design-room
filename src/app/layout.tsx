@@ -1,13 +1,16 @@
 import React from "react";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import { Providers } from "@/contexts/Providers";
+import { IProps } from "@/types/common.type";
+
+const RootLayout: React.FC<IProps> = ({ children }) => {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "draw room project is to make space for setting up furnitures and enable the user to guess the space where they visit\"",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,9 +11,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/three": "^0.165.0",
     "next": "^14.2.4",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "three": "^0.165.0"
   },
   "devDependencies": {
     "@types/node": "20.14.9",
