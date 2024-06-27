@@ -7,7 +7,6 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
     "noEmit": true,
     "incremental": true,
     "module": "esnext",
@@ -20,7 +19,9 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "strictNullChecks": true,
+    "strict": false
   },
   "include": [
     "next-env.d.ts",
