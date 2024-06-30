@@ -12,7 +12,7 @@ const Modal: React.FC<IProps> = ({ title, content, buttons }) => {
     <div>
       <div>
         {!!title && <div>{title}</div>}
-        {!!content && <div></div>}
+        {!!content && <div>{content}</div>}
         <div>
           {buttons.map((el: any) => {
             const { onClick, name } = el;

@@ -1,4 +1,10 @@
-import React, { ReactNode, createContext, useEffect, useState } from "react";
+import React, {
+  ReactNode,
+  createContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import WebGL from "three/examples/jsm/capabilities/WebGL.js";
 
 import * as THREE from "three";
@@ -13,12 +19,14 @@ type ThreeContext = {
   scene: THREE.Scene | undefined;
   camera: THREE.PerspectiveCamera | undefined;
   renderer: THREE.WebGLRenderer | undefined;
+  meshes: THREE.Object3D | undefined;
 };
 
 export const ThreeContext = createContext<ThreeContext>({
   scene: undefined,
   camera: undefined,
   renderer: undefined,
+  meshes: undefined,
 });
 
 export const ThreeProvider: React.FC<IProps> = ({ children }) => {
@@ -30,6 +38,9 @@ export const ThreeProvider: React.FC<IProps> = ({ children }) => {
   const [renderer, setRenderer] = useState<THREE.WebGLRenderer>();
 
   const [isThreeJsLoaded, setIsThreeJsLoaded] = useState<boolean>(false);
+
+  const meshesRef = useRef<THREE.Object3D>();
+  const { current } = meshesRef;
 
   const init = () => {
     const scene = new THREE.Scene();
@@ -55,6 +66,7 @@ export const ThreeProvider: React.FC<IProps> = ({ children }) => {
         scene,
         camera,
         renderer,
+        meshes: current,
       }}
     >
       {isThreeJsLoaded && children}
