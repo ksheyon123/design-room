@@ -19,47 +19,54 @@ interface IProps {
 
 export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   const canvasRef = useRef<HTMLDivElement>();
+  const sceneRef = useRef<THREE.Scene>();
+  const cameraRef = useRef<THREE.PerspectiveCamera>();
+
   const { createCamera, moveCamera } = useCamera();
   const { createRenderer } = useRenederer();
-  const { createFloor, createOutline } = useMesh();
+  const { createPlane, createOutline } = useMesh();
   const { start } = useLiner();
-  const { onPointKeydown, onPointKeyup, getPosition } = useRaycaster(
-    width,
-    height
-  );
+  const { onPointMove, onPointKeydown, onPointKeyup, setPosition, drawLine } =
+    useRaycaster(width, height, sceneRef.current, cameraRef.current);
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
     if (canvasRef) {
       setIsMounted(true);
+      const scene = new THREE.Scene();
+      const camera = createCamera(width, height);
+      sceneRef.current = scene;
+      cameraRef.current = camera;
     }
   }, [canvasRef]);
 
   useEffect(() => {
     if (isMounted) {
-      // const d = createPlaidTexture();
-      const scene = new THREE.Scene();
-      const camera = createCamera(width, height);
       const renderer = createRenderer(width, height);
       canvasRef.current && canvasRef.current.appendChild(renderer.domElement);
 
-      const plane = createFloor("floor", width, height, 0xffffff);
-      scene.add(plane);
+      const plane = createPlane("floor", width, height, 0xffffff);
+      sceneRef.current!.add(plane);
 
       let handleId: any;
       const animate = () => {
         handleId = requestAnimationFrame(animate);
 
-        camera.position.set(0, 0, 30);
-        camera.lookAt(new THREE.Vector3(0, 0, 0));
-        const v = getPosition(scene, camera);
-        if (v) {
-          const dot = start(v);
-          dot.position.set(v.x, v.y, v.z);
-          scene.add(dot);
+        cameraRef.current!.position.set(0, 0, 50);
+        cameraRef.current!.lookAt(new THREE.Vector3(0, 0, 0));
+        // const v = setStartPosition(sceneRef.current, cameraRef.current);
+        // if (v) {
+        //   const dot = start(v);
+        //   dot.position.set(v.x, v.y, v.z);
+        //   sceneRef.current!.add(dot);
+        // }
+
+        const line = drawLine();
+        if (line) {
+          sceneRef.current?.add(line);
         }
-        renderer.render(scene, camera);
+        renderer.render(sceneRef.current!, cameraRef.current!);
       };
       animate();
       return () => cancelAnimationFrame(handleId);
@@ -69,9 +76,11 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   useEffect(() => {
     if (canvasRef.current) {
       canvasRef.current.addEventListener("mousedown", onPointKeydown);
+      canvasRef.current.addEventListener("mousemove", onPointMove);
       canvasRef.current.addEventListener("mouseup", onPointKeyup);
       return () => {
         canvasRef.current?.removeEventListener("mousedown", onPointKeydown);
+        canvasRef.current?.removeEventListener("mousemove", onPointMove);
         canvasRef.current?.removeEventListener("mouseup", onPointKeyup);
       };
     }

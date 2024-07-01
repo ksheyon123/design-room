@@ -26,7 +26,7 @@ export const useMesh = () => {
     return new THREE.CanvasTexture(canvas);
   };
 
-  const createFloor = (
+  const createPlane = (
     name: string,
     width?: number,
     height?: number,
@@ -56,7 +56,7 @@ export const useMesh = () => {
   };
 
   return {
-    createFloor,
+    createPlane,
     createOutline,
   };
 };
