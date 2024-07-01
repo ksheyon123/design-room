@@ -11,7 +11,7 @@ export const ModalContext = createContext<{
 
 export const ModalProvider: React.FC<IProps> = ({ children }) => {
   const { component, isOpened, toggleModal } = useModal();
-  const isComponent = !!component;
+  // const isComponent = !!component;
   return (
     <ModalContext.Provider
       value={{
@@ -19,7 +19,7 @@ export const ModalProvider: React.FC<IProps> = ({ children }) => {
       }}
     >
       {children}
-      {isOpened && isComponent && <Modal {...component} />}
+      {isOpened && <Modal {...component} />}
     </ModalContext.Provider>
   );
 };

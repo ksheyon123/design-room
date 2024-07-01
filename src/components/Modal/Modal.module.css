@@ -1,0 +1,38 @@
+.modal-wrapper {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+.modal {
+  min-width: 400px;
+  height: auto;
+}
+
+.title-area {
+  font-weight: 600;
+  font-size: 16px;
+  padding-top: 12px;
+}
+
+.content-area {
+  font-weight: 400;
+  font-size: 14px;
+  padding-top: 8px;
+}
+
+.btn-area {
+  display: flex;
+  flex-flow: row wrap;
+  padding-top: 12px;
+}
+
+.btn {
+  flex-grow: 1;
+}

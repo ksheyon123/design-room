@@ -3,9 +3,9 @@ import { ReactNode, useState } from "react";
 export const useModal = () => {
   const [isOpened, setIsOpened] = useState<boolean>(false);
   const [component, setComponent] = useState<{
-    buttons: ReactNode[];
-    title: ReactNode;
-    content: ReactNode;
+    buttons?: ReactNode[];
+    title?: ReactNode;
+    content?: ReactNode;
   }>();
 
   const toggleModal = (props?: any) => {
