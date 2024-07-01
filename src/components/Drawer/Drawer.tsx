@@ -8,6 +8,8 @@ import { useRenederer } from "@/hooks/useRenderer";
 
 import * as styles from "./Drawer.module.css";
 import styled from "styled-components";
+import { useRaycaster } from "@/hooks/useRaycaster";
+import { useLiner } from "@/hooks/useLiner";
 
 interface IProps {
   onClick: Function;
@@ -19,7 +21,12 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   const canvasRef = useRef<HTMLDivElement>();
   const { createCamera, moveCamera } = useCamera();
   const { createRenderer } = useRenederer();
-  const { createFloor } = useMesh();
+  const { createFloor, createOutline } = useMesh();
+  const { start } = useLiner();
+  const { onPointKeydown, onPointKeyup, getPosition } = useRaycaster(
+    width,
+    height
+  );
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -31,41 +38,44 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
   useEffect(() => {
     if (isMounted) {
+      // const d = createPlaidTexture();
       const scene = new THREE.Scene();
       const camera = createCamera(width, height);
       const renderer = createRenderer(width, height);
       canvasRef.current && canvasRef.current.appendChild(renderer.domElement);
 
-      const plane = createFloor(10, 10, 0xffffff);
-      plane.name = "plane";
+      const plane = createFloor("floor", width, height, 0xffffff);
       scene.add(plane);
 
-      const geometry = new THREE.PlaneGeometry(10, 10);
-      const outlineMaterial = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        side: THREE.BackSide,
-      });
-      const outlineMesh = new THREE.Mesh(geometry, outlineMaterial);
-      outlineMesh.scale.multiplyScalar(1.05);
-      outlineMesh.name = "outline";
-      scene.add(outlineMesh);
-
-      camera.position.set(0, 20, 10);
-
-      // camera.position.set(0, 10, 30);
       let handleId: any;
       const animate = () => {
         handleId = requestAnimationFrame(animate);
 
-        const { x, y, z } = moveCamera(new THREE.Vector3(0, 0, 0));
-        camera.position.set(x, y, z);
+        camera.position.set(0, 0, 30);
         camera.lookAt(new THREE.Vector3(0, 0, 0));
+        const v = getPosition(scene, camera);
+        if (v) {
+          const dot = start(v);
+          dot.position.set(v.x, v.y, v.z);
+          scene.add(dot);
+        }
         renderer.render(scene, camera);
       };
       animate();
       return () => cancelAnimationFrame(handleId);
     }
   }, [isMounted]);
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      canvasRef.current.addEventListener("mousedown", onPointKeydown);
+      canvasRef.current.addEventListener("mouseup", onPointKeyup);
+      return () => {
+        canvasRef.current?.removeEventListener("mousedown", onPointKeydown);
+        canvasRef.current?.removeEventListener("mouseup", onPointKeyup);
+      };
+    }
+  }, [canvasRef.current]);
 
   return (
     <StyledDrawer $width={width} $height={height}>
@@ -75,6 +85,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 };
 
 const StyledDrawer = styled.div<{ $width?: number; $height?: number }>`
+  border-top: 1px solid #aaa;
   width: ${(props) => `${props.$width}px` || "100%"};
   height: ${(props) => `${props.$height}px` || "100%"};
 `;

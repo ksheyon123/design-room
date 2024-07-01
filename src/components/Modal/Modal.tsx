@@ -13,9 +13,9 @@ const Modal: React.FC<IProps> = ({ title, content, buttons }) => {
       <div className={styles["modal"]}>
         {!!title && <div className={styles["title-area"]}>{title}</div>}
         {!!content && <div className={styles["content-area"]}>{content}</div>}
-        <div className={styles["btn-area"]}>
-          {!!buttons &&
-            buttons.map((el: any) => {
+        {!!buttons && (
+          <div className={styles["btn-area"]}>
+            {buttons.map((el: any) => {
               const { onClick, name } = el;
               return (
                 <button onClick={() => onClick()} {...el}>
@@ -23,7 +23,8 @@ const Modal: React.FC<IProps> = ({ title, content, buttons }) => {
                 </button>
               );
             })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
