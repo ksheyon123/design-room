@@ -26,8 +26,14 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   const { createRenderer } = useRenederer();
   const { createPlane, createOutline } = useMesh();
   const { start } = useLiner();
-  const { onPointMove, onPointKeydown, onPointKeyup, setPosition, drawLine } =
-    useRaycaster(width, height, sceneRef.current, cameraRef.current);
+  const {
+    onPointMove,
+    onPointKeydown,
+    onPointKeyup,
+    setPosition,
+    onPointOut,
+    drawTempLine,
+  } = useRaycaster(width, height, sceneRef.current, cameraRef.current);
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -62,10 +68,8 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
         //   sceneRef.current!.add(dot);
         // }
 
-        const line = drawLine();
-        if (line) {
-          sceneRef.current?.add(line);
-        }
+        drawTempLine();
+
         renderer.render(sceneRef.current!, cameraRef.current!);
       };
       animate();
@@ -78,10 +82,12 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
       canvasRef.current.addEventListener("mousedown", onPointKeydown);
       canvasRef.current.addEventListener("mousemove", onPointMove);
       canvasRef.current.addEventListener("mouseup", onPointKeyup);
+      canvasRef.current.addEventListener("mouseout", onPointOut);
       return () => {
         canvasRef.current?.removeEventListener("mousedown", onPointKeydown);
         canvasRef.current?.removeEventListener("mousemove", onPointMove);
         canvasRef.current?.removeEventListener("mouseup", onPointKeyup);
+        canvasRef.current?.removeEventListener("mouseout", onPointOut);
       };
     }
   }, [canvasRef.current]);

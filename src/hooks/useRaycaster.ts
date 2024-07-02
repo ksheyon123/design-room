@@ -14,14 +14,16 @@ export const useRaycaster = (
     to?: THREE.Vector3;
   }>();
 
-  const startPointRef = useRef<THREE.Vector2>(new THREE.Vector2(0, 0));
-  const endPointRef = useRef<THREE.Vector2>(new THREE.Vector2(0, 0));
-  const isClickingRef = useRef<boolean>(false);
+  const isClickedRef = useRef<boolean>(false);
+
+  const onKeyHandler = (e: KeyboardEvent) => {
+    const { code } = e;
+  };
 
   const onPointMove = (event: MouseEvent) => {
-    endPointRef.current.x = (event.offsetX / width) * 2 - 1;
-    endPointRef.current.y = -(event.offsetY / height) * 2 + 1;
-    const point = setPosition(endPointRef.current);
+    const x = (event.offsetX / width) * 2 - 1;
+    const y = -(event.offsetY / height) * 2 + 1;
+    const point = setPosition(new THREE.Vector2(x, y));
 
     if (point && scene) {
       const dot = createPlane("dot", 1, 1);
@@ -30,21 +32,31 @@ export const useRaycaster = (
         ...pointRef.current,
         to: dot.position.clone(),
       };
-      scene.add(dot);
     }
   };
 
   const onPointOut = () => {
-    isClickingRef.current = false;
+    isClickedRef.current = false;
+    const tempLines = scene?.children.filter((el) => el.name === "tempLine");
+    if (tempLines) {
+      tempLines.map((el) => el.removeFromParent());
+    }
   };
 
-  const onPointKeydown = (event: MouseEvent) => {
-    startPointRef.current.x = (event.offsetX / width) * 2 - 1;
-    startPointRef.current.y = -(event.offsetY / height) * 2 + 1;
-    isClickingRef.current = true;
+  const onPointKeydown = () => {
+    isClickedRef.current = !isClickedRef.current;
+  };
+  const onPointKeyup = (event: MouseEvent) => {
+    if (isClickedRef.current) {
+      const lines = createLine("line");
+      if (lines) {
+        scene?.add(lines);
+      }
+    }
 
-    const point = setPosition(startPointRef.current);
-
+    const x = (event.offsetX / width) * 2 - 1;
+    const y = -(event.offsetY / height) * 2 + 1;
+    const point = setPosition(new THREE.Vector2(x, y));
     if (point && scene) {
       const dot = createPlane("dot", 1, 1);
       dot.position.set(point.x, point.y, point.z);
@@ -52,11 +64,8 @@ export const useRaycaster = (
         from: dot.position.clone(),
       };
       scene.add(dot);
+      isClickedRef.current = !isClickedRef.current;
     }
-  };
-  const onPointKeyup = () => {
-    isClickingRef.current = false;
-    // setPosition(endPointRef.current);
   };
 
   const setPosition = (v) => {
@@ -68,22 +77,32 @@ export const useRaycaster = (
 
       for (let i = 0; i < intersects.length; i++) {
         const { point } = intersects[i];
-        isClickingRef.current = false;
         return point;
       }
     }
   };
 
-  const drawLine = () => {
-    if (pointRef.current) {
+  // const chk = () => {};
+
+  const createLine = (name = "tempLine") => {
+    if (!!pointRef.current?.from && !!pointRef.current?.to) {
       const arr = Object.values(pointRef.current);
-      console.log(arr);
-      if (arr.length > 1) {
-        const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-        const geometry = new THREE.BufferGeometry().setFromPoints(arr);
-        const line = new THREE.Line(geometry, material);
-        return line;
-      }
+      const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+      const geometry = new THREE.BufferGeometry().setFromPoints(arr);
+      const line = new THREE.Line(geometry, material);
+      line.name = name;
+      return line;
+    }
+  };
+
+  const drawTempLine = () => {
+    if (scene) {
+      const tempLines = scene?.children.filter((el) => el.name === "tempLine");
+      tempLines.map((el) => el.removeFromParent());
+    }
+    const lines = createLine();
+    if (lines) {
+      scene?.add(lines);
     }
   };
 
@@ -93,6 +112,6 @@ export const useRaycaster = (
     onPointKeydown,
     onPointKeyup,
     setPosition,
-    drawLine,
+    drawTempLine,
   };
 };
