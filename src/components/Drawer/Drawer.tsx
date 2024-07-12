@@ -33,6 +33,8 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     setPosition,
     onPointOut,
     drawTempLine,
+    onKeydownHandler,
+    onKeyupHandler,
   } = useRaycaster(width, height, sceneRef.current, cameraRef.current);
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
@@ -61,12 +63,6 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
         cameraRef.current!.position.set(0, 0, 50);
         cameraRef.current!.lookAt(new THREE.Vector3(0, 0, 0));
-        // const v = setStartPosition(sceneRef.current, cameraRef.current);
-        // if (v) {
-        //   const dot = start(v);
-        //   dot.position.set(v.x, v.y, v.z);
-        //   sceneRef.current!.add(dot);
-        // }
 
         drawTempLine();
 
@@ -83,11 +79,15 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
       canvasRef.current.addEventListener("mousemove", onPointMove);
       canvasRef.current.addEventListener("mouseup", onPointKeyup);
       canvasRef.current.addEventListener("mouseout", onPointOut);
+      window.addEventListener("keydown", onKeydownHandler);
+      window.addEventListener("keyup", onKeyupHandler);
       return () => {
         canvasRef.current?.removeEventListener("mousedown", onPointKeydown);
         canvasRef.current?.removeEventListener("mousemove", onPointMove);
         canvasRef.current?.removeEventListener("mouseup", onPointKeyup);
         canvasRef.current?.removeEventListener("mouseout", onPointOut);
+        window.addEventListener("keydown", onKeydownHandler);
+        window.addEventListener("keyup", onKeyupHandler);
       };
     }
   }, [canvasRef.current]);
