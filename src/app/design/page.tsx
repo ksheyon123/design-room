@@ -6,6 +6,7 @@ import { Drawer } from "@/components/Drawer/Drawer";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClose } from "@fortawesome/free-solid-svg-icons";
+import { ThreeView } from "@/components/ThreeView/ThreeView";
 
 export default function Page() {
   const { toggleModal } = useContext(ModalContext);
@@ -32,7 +33,7 @@ export default function Page() {
       >
         Button
       </div>
-      {/* <ThreeView />; */}
+      <ThreeView />;
     </div>
   );
 }

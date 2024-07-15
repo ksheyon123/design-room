@@ -11,11 +11,11 @@ import * as THREE from "three";
 
 import { ThreeContext } from "@/contexts/ThreeContext";
 import { useCamera } from "@/hooks/useCamera";
-import { useMesh } from "@/hooks/useMesh";
+// import { useMesh } from "@/hooks/useMesh";
 
 const ThreeView: React.FC = () => {
   const { scene, camera, renderer } = useContext(ThreeContext);
-  const { createFloor } = useMesh();
+  // const { createFloor } = useMesh();
   const {
     zoomCamera,
     moveCamera,
@@ -30,9 +30,9 @@ const ThreeView: React.FC = () => {
   useEffect(() => {
     if (renderer && scene && camera) {
       canvasRef.current && canvasRef.current.appendChild(renderer.domElement);
-      const plane = createFloor(100, 100);
-      plane.rotateX(90);
-      scene.add(plane);
+      // const plane = createFloor(100, 100);
+      // plane.rotateX(90);
+      // scene.add(plane);
 
       // camera.position.set(0, 10, 30);
       let handleId: any;
@@ -40,9 +40,10 @@ const ThreeView: React.FC = () => {
         handleId = requestAnimationFrame(animate);
 
         const { x, y, z } = moveCamera(new THREE.Vector3(0, 0, 0));
-        camera.position.set(x, y, z);
+        camera.position.set(x, 10, 20);
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
+        // console.log(scene.children);
         renderer.render(scene, camera);
       };
       animate();

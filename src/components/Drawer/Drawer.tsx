@@ -96,7 +96,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
   return (
     <StyledDrawer $width={width} $height={height}>
-      <ToolBox />
+      {sceneRef.current && <ToolBox scene={sceneRef.current} />}
       <div>
         <div ref={canvasRef as RefObject<HTMLDivElement>} />
       </div>

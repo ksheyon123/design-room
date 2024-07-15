@@ -1,42 +1,72 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
+import * as THREE from "three";
 
 import * as styles from "./ToolBox.module.css";
+import { useMesh } from "@/hooks/useMesh";
+import { ThreeContext } from "@/contexts/ThreeContext";
+import { useModal } from "@/hooks/useModal";
+import { ModalContext } from "@/contexts/ModalContext";
+
+interface IProps {
+  scene: THREE.Scene;
+}
 
 type ToolItem = {
   label: string;
   isClicked?: boolean;
+  onClick?: Function;
 };
 
-const TOOL_ITEMS: ToolItem[] = [
-  {
-    label: "Line",
-  },
-  {
-    label: "Square",
-  },
-];
+export const ToolBox = ({ scene }: IProps) => {
+  const { scene: rootScene } = useContext(ThreeContext);
+  const { combineMesh, testMesh } = useMesh();
+  const { toggleModal } = useContext(ModalContext);
 
-export const ToolBox: React.FC = () => {
+  const TOOL_ITEMS: ToolItem[] = [
+    {
+      label: "Line",
+    },
+    {
+      label: "Square",
+    },
+    {
+      label: "Combine",
+      onClick: combineMesh,
+    },
+    {
+      label: "Test",
+      onClick: testMesh,
+    },
+  ];
+
   const [items, setItems] = useState<ToolItem[]>(TOOL_ITEMS);
 
   return (
     <div className={styles["toolbox-container"]}>
       <ul>
-        {items.map(({ label, isClicked }, idx) => (
+        {items.map(({ label, isClicked, onClick }, idx) => (
           <li
             className={`${isClicked ? styles["active"] : ""}`}
-            onClick={() =>
-              setItems((prev: ToolItem[]) => {
-                const newItems = {
-                  ...prev[idx],
-                  isClicked: !prev[idx]?.isClicked,
-                };
-                return prev
-                  .slice(0, idx)
-                  .concat(newItems)
-                  .concat(prev.slice(idx + 1));
-              })
-            }
+            onClick={() => {
+              if (onClick) {
+                const plane = onClick(scene);
+                rootScene?.add(plane);
+                // if (toggleModal) {
+                //   toggleModal();
+                // }
+              } else {
+                setItems((prev: ToolItem[]) => {
+                  const newItems = {
+                    ...prev[idx],
+                    isClicked: !prev[idx]?.isClicked,
+                  };
+                  return prev
+                    .slice(0, idx)
+                    .concat(newItems)
+                    .concat(prev.slice(idx + 1));
+                });
+              }
+            }}
           >
             {label}
           </li>

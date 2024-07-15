@@ -56,29 +56,66 @@ export const useMesh = () => {
   };
 
   const combineMesh = (scene: THREE.Scene) => {
-    const vertices = scene.children.filter((el) => el.name === "line");
-    // Create the plane geometry using the vertices
+    const lines = scene.children.filter((el) => el.name === "line");
+
+    if (lines.length < 4) {
+      console.error("Not enough lines to form a plane");
+      return null;
+    }
+
+    // Function to get the start and end points of a line
+    const getVertices = (line) => {
+      const positions = line.geometry.attributes.position.array;
+      return [
+        new THREE.Vector3(positions[0], positions[1], positions[2]),
+        new THREE.Vector3(positions[3], positions[4], positions[5]),
+      ];
+    };
+
+    // Retrieve vertices from the lines
+    const vertices: THREE.Vector3[] = [];
+    lines.forEach((line) => {
+      const [start, end] = getVertices(line);
+      vertices.push(start, end);
+    });
+
+    // Ensure we have unique vertices
+    const uniqueVertices = Array.from(
+      new Set(vertices.map((v) => `${v.x},${v.y},${v.z}`))
+    ).map((v) => {
+      const [x, y, z] = v.split(",").map(Number);
+      return new THREE.Vector3(x, y, z);
+    });
+
+    if (uniqueVertices.length !== 4) {
+      console.error("Vertices do not form a valid plane");
+      return null;
+    }
+
+    // Create the plane geometry using the unique vertices
     const planeGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array([
-      vertices[0].position.x,
-      vertices[0].position.y,
-      vertices[0].position.z,
-      vertices[1].position.x,
-      vertices[1].position.y,
-      vertices[1].position.z,
-      vertices[2].position.x,
-      vertices[2].position.y,
-      vertices[2].position.z,
-      vertices[0].position.x,
-      vertices[0].position.y,
-      vertices[0].position.z,
-      vertices[2].position.x,
-      vertices[2].position.y,
-      vertices[2].position.z,
-      vertices[3].position.x,
-      vertices[3].position.y,
-      vertices[3].position.z,
+      uniqueVertices[0].x,
+      uniqueVertices[0].y,
+      uniqueVertices[0].z,
+      uniqueVertices[1].x,
+      uniqueVertices[1].y,
+      uniqueVertices[1].z,
+      uniqueVertices[2].x,
+      uniqueVertices[2].y,
+      uniqueVertices[2].z,
+
+      uniqueVertices[2].x,
+      uniqueVertices[2].y,
+      uniqueVertices[2].z,
+      uniqueVertices[3].x,
+      uniqueVertices[3].y,
+      uniqueVertices[3].z,
+      uniqueVertices[0].x,
+      uniqueVertices[0].y,
+      uniqueVertices[0].z,
     ]);
+
     planeGeometry.setAttribute(
       "position",
       new THREE.BufferAttribute(positions, 3)
@@ -87,16 +124,51 @@ export const useMesh = () => {
 
     // Create the plane mesh
     const planeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffff00,
+      color: 0x000000,
       side: THREE.DoubleSide,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    scene.add(plane);
+    return plane;
+  };
+
+  const testMesh = () => {
+    const geometry = new THREE.BufferGeometry();
+
+    // create a simple square shape. We duplicate the top left and bottom right
+    // vertices because each vertex needs to appear once per triangle.
+    const vertices = new Float32Array([
+      -1.0,
+      -1.0,
+      1.0, // v0
+      1.0,
+      -1.0,
+      1.0, // v1
+      1.0,
+      1.0,
+      1.0, // v2
+
+      1.0,
+      1.0,
+      1.0, // v3
+      -1.0,
+      1.0,
+      1.0, // v4
+      -1.0,
+      -1.0,
+      1.0, // v5
+    ]);
+
+    // itemSize = 3 because there are 3 values (components) per vertex
+    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const mesh = new THREE.Mesh(geometry, material);
+    return mesh;
   };
 
   return {
     createPlane,
     createOutline,
     combineMesh,
+    testMesh,
   };
 };
