@@ -6,10 +6,10 @@ import { useCamera } from "@/hooks/useCamera";
 import { useMesh } from "@/hooks/useMesh";
 import { useRenederer } from "@/hooks/useRenderer";
 
-import * as styles from "./Drawer.module.css";
 import styled from "styled-components";
 import { useRaycaster } from "@/hooks/useRaycaster";
 import { useLiner } from "@/hooks/useLiner";
+import { ToolBox } from "@/components/ToolBox/ToolBox";
 
 interface IProps {
   onClick: Function;
@@ -35,6 +35,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     drawTempLine,
     onKeydownHandler,
     onKeyupHandler,
+    chkLeftShift,
   } = useRaycaster(width, height, sceneRef.current, cameraRef.current);
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
@@ -64,6 +65,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
         cameraRef.current!.position.set(0, 0, 50);
         cameraRef.current!.lookAt(new THREE.Vector3(0, 0, 0));
 
+        chkLeftShift();
         drawTempLine();
 
         renderer.render(sceneRef.current!, cameraRef.current!);
@@ -94,12 +96,16 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
   return (
     <StyledDrawer $width={width} $height={height}>
-      <div ref={canvasRef as RefObject<HTMLDivElement>} />
+      <ToolBox />
+      <div>
+        <div ref={canvasRef as RefObject<HTMLDivElement>} />
+      </div>
     </StyledDrawer>
   );
 };
 
 const StyledDrawer = styled.div<{ $width?: number; $height?: number }>`
+  position: relative;
   border-top: 1px solid #aaa;
   width: ${(props) => `${props.$width}px` || "100%"};
   height: ${(props) => `${props.$height}px` || "100%"};

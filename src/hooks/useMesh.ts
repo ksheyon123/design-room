@@ -55,8 +55,48 @@ export const useMesh = () => {
     return outlineMesh;
   };
 
+  const combineMesh = (scene: THREE.Scene) => {
+    const vertices = scene.children.filter((el) => el.name === "line");
+    // Create the plane geometry using the vertices
+    const planeGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array([
+      vertices[0].position.x,
+      vertices[0].position.y,
+      vertices[0].position.z,
+      vertices[1].position.x,
+      vertices[1].position.y,
+      vertices[1].position.z,
+      vertices[2].position.x,
+      vertices[2].position.y,
+      vertices[2].position.z,
+      vertices[0].position.x,
+      vertices[0].position.y,
+      vertices[0].position.z,
+      vertices[2].position.x,
+      vertices[2].position.y,
+      vertices[2].position.z,
+      vertices[3].position.x,
+      vertices[3].position.y,
+      vertices[3].position.z,
+    ]);
+    planeGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3)
+    );
+    planeGeometry.computeVertexNormals();
+
+    // Create the plane mesh
+    const planeMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffff00,
+      side: THREE.DoubleSide,
+    });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    scene.add(plane);
+  };
+
   return {
     createPlane,
     createOutline,
+    combineMesh,
   };
 };
