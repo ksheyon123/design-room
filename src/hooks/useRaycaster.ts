@@ -125,7 +125,6 @@ export const useRaycaster = (
       const y = -(event.offsetY / height) * 2 + 1;
       const point = setPosition(new THREE.Vector3(x, y, 0));
       if (point && scene) {
-        console.log(point);
         const dots = scene.children.filter((el: any) => el.name === "line-dot");
         const [obj] = dots.filter((el) => {
           const tP = el.position.clone();
@@ -138,10 +137,10 @@ export const useRaycaster = (
             return el;
           }
         });
-        // setInvisibleDot(x, y, 0);
         if (obj) {
           fromPointRef.current = obj.position.clone();
         } else {
+          setInvisibleDot(point.x, point.y, 0);
           fromPointRef.current = point.clone();
         }
       }
@@ -152,16 +151,32 @@ export const useRaycaster = (
 
   const onPointKeyup = (event: MouseEvent) => {
     if (isClickedRef.current) {
-      const lines = createLine(
-        fromPointRef.current,
-        toPointRef.current,
-        "line"
-      );
-      if (lines) {
+      let v = new THREE.Vector3();
+      if (scene) {
         const { x, y } = toPointRef.current!;
-        console.log(x, y);
-        // setInvisibleDot(x, y, 0);
-        scene?.add(lines);
+        const dots = scene.children.filter((el: any) => el.name === "line-dot");
+        const [obj] = dots.filter((el) => {
+          const tP = el.position.clone();
+          console.log(tP, new THREE.Vector3(x, y, 0));
+          if (distanceFromPointToPoint(tP, new THREE.Vector3(x, y, 0)) < 1) {
+            console.log("EL:", el);
+            return el;
+          }
+        });
+        if (obj) {
+          const { x, y } = obj.position.clone();
+          v.set(x, y, 0);
+        } else {
+          console.log("No Obj");
+          const { x, y } = toPointRef.current!;
+          setInvisibleDot(x, y, 0);
+          v.set(x, y, 0);
+        }
+        const lines = createLineMaterial(fromPointRef.current, v, "line");
+        console.log(scene.children);
+        if (lines) {
+          scene?.add(lines);
+        }
       }
     }
     fromPointRef.current = null;
@@ -269,7 +284,7 @@ export const useRaycaster = (
    * @param name (default tempLine) indicate line type
    * @returns line object
    */
-  const createLine = (from, to, name = "tempLine") => {
+  const createLineMaterial = (from, to, name = "tempLine") => {
     if (!!from && !!to) {
       const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
       const geometry = new THREE.BufferGeometry().setFromPoints([from, to]);
@@ -285,7 +300,7 @@ export const useRaycaster = (
       tempLines.map((el) => el.removeFromParent());
     }
 
-    const lines = createLine(fromPointRef.current, toPointRef.current);
+    const lines = createLineMaterial(fromPointRef.current, toPointRef.current);
     if (lines) {
       scene?.add(lines);
     }
