@@ -26,6 +26,13 @@ export const useMesh = () => {
     return new THREE.CanvasTexture(canvas);
   };
 
+  const createDot = () => {
+    const geometry = new THREE.CircleGeometry(0.1, 32);
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const circle = new THREE.Mesh(geometry, material);
+    return circle;
+  };
+
   const createPlane = (
     name: string,
     width?: number,
@@ -55,6 +62,15 @@ export const useMesh = () => {
     return outlineMesh;
   };
 
+  // Function to get the start and end points of a line
+  const getVertices = (line) => {
+    const positions = line.geometry.attributes.position.array;
+    return [
+      new THREE.Vector3(positions[0], positions[1], positions[2]),
+      new THREE.Vector3(positions[3], positions[4], positions[5]),
+    ];
+  };
+
   const combineMesh = (scene: THREE.Scene) => {
     const lines = scene.children.filter((el) => el.name === "line");
 
@@ -62,15 +78,6 @@ export const useMesh = () => {
       console.error("Not enough lines to form a plane");
       return null;
     }
-
-    // Function to get the start and end points of a line
-    const getVertices = (line) => {
-      const positions = line.geometry.attributes.position.array;
-      return [
-        new THREE.Vector3(positions[0], positions[1], positions[2]),
-        new THREE.Vector3(positions[3], positions[4], positions[5]),
-      ];
-    };
 
     // Retrieve vertices from the lines
     const vertices: THREE.Vector3[] = [];
@@ -81,12 +88,33 @@ export const useMesh = () => {
 
     // Ensure we have unique vertices
     const uniqueVertices = Array.from(
-      new Set(vertices.map((v) => `${v.x},${v.y},${v.z}`))
+      new Set(vertices.map((v) => `${v.x},${v.y},${0}`))
     ).map((v) => {
       const [x, y, z] = v.split(",").map(Number);
       return new THREE.Vector3(x, y, z);
     });
 
+    console.log(
+      uniqueVertices[0].x,
+      uniqueVertices[0].y,
+      0, // uniqueVertices[0].z
+      uniqueVertices[1].x,
+      uniqueVertices[1].y,
+      0, // uniqueVertices[1].z,
+      uniqueVertices[2].x,
+      uniqueVertices[2].y,
+      0, // uniqueVertices[2].z,
+
+      uniqueVertices[2].x,
+      uniqueVertices[2].y,
+      0, // uniqueVertices[2].z,
+      uniqueVertices[3].x,
+      uniqueVertices[3].y,
+      0, //uniqueVertices[3].z,
+      uniqueVertices[0].x,
+      uniqueVertices[0].y,
+      0 //uniqueVertices[0].z,
+    );
     if (uniqueVertices.length !== 4) {
       console.error("Vertices do not form a valid plane");
       return null;
@@ -97,25 +125,28 @@ export const useMesh = () => {
     const positions = new Float32Array([
       uniqueVertices[0].x,
       uniqueVertices[0].y,
-      uniqueVertices[0].z,
+      0, // uniqueVertices[0].z
+
       uniqueVertices[1].x,
       uniqueVertices[1].y,
-      uniqueVertices[1].z,
-      uniqueVertices[2].x,
-      uniqueVertices[2].y,
-      uniqueVertices[2].z,
+      0, // uniqueVertices[1].z,
 
       uniqueVertices[2].x,
       uniqueVertices[2].y,
-      uniqueVertices[2].z,
+      0, // uniqueVertices[2].z,
+
+      uniqueVertices[2].x,
+      uniqueVertices[2].y,
+      0, // uniqueVertices[2].z,
+
       uniqueVertices[3].x,
       uniqueVertices[3].y,
-      uniqueVertices[3].z,
+      0, // uniqueVertices[3].z,
+
       uniqueVertices[0].x,
       uniqueVertices[0].y,
-      uniqueVertices[0].z,
+      0, // uniqueVertices[0].z,
     ]);
-
     planeGeometry.setAttribute(
       "position",
       new THREE.BufferAttribute(positions, 3)
@@ -168,7 +199,9 @@ export const useMesh = () => {
   return {
     createPlane,
     createOutline,
+    createDot,
     combineMesh,
     testMesh,
+    getVertices,
   };
 };

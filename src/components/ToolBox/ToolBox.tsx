@@ -34,6 +34,10 @@ export const ToolBox = ({ scene }: IProps) => {
       onClick: combineMesh,
     },
     {
+      label: "Remove",
+      onClick: () => {},
+    },
+    {
       label: "Test",
       onClick: testMesh,
     },

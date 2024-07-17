@@ -31,6 +31,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     onPointKeydown,
     onPointKeyup,
     setPosition,
+    outliner,
     onPointOut,
     drawTempLine,
     onKeydownHandler,
@@ -64,7 +65,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
         cameraRef.current!.position.set(0, 0, 50);
         cameraRef.current!.lookAt(new THREE.Vector3(0, 0, 0));
-
+        outliner();
         chkLeftShift();
         drawTempLine();
 
