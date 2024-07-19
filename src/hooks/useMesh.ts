@@ -94,27 +94,6 @@ export const useMesh = () => {
       return new THREE.Vector3(x, y, z);
     });
 
-    console.log(
-      uniqueVertices[0].x,
-      uniqueVertices[0].y,
-      0, // uniqueVertices[0].z
-      uniqueVertices[1].x,
-      uniqueVertices[1].y,
-      0, // uniqueVertices[1].z,
-      uniqueVertices[2].x,
-      uniqueVertices[2].y,
-      0, // uniqueVertices[2].z,
-
-      uniqueVertices[2].x,
-      uniqueVertices[2].y,
-      0, // uniqueVertices[2].z,
-      uniqueVertices[3].x,
-      uniqueVertices[3].y,
-      0, //uniqueVertices[3].z,
-      uniqueVertices[0].x,
-      uniqueVertices[0].y,
-      0 //uniqueVertices[0].z,
-    );
     if (uniqueVertices.length !== 4) {
       console.error("Vertices do not form a valid plane");
       return null;
@@ -159,41 +138,66 @@ export const useMesh = () => {
       side: THREE.DoubleSide,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.name = "plane";
     return plane;
   };
 
-  const testMesh = () => {
-    const geometry = new THREE.BufferGeometry();
+  const addHeight = (scene: THREE.Scene) => {
+    let height = 10;
+    const plane = scene.children.filter((el) => el.name === "plane")[0] as any;
+    const vertices = plane.geometry.attributes.position.array;
 
-    // create a simple square shape. We duplicate the top left and bottom right
-    // vertices because each vertex needs to appear once per triangle.
-    const vertices = new Float32Array([
-      -1.0,
-      -1.0,
-      1.0, // v0
-      1.0,
-      -1.0,
-      1.0, // v1
-      1.0,
-      1.0,
-      1.0, // v2
+    // Define the positions for the new geometry with height
+    const positions = new Float32Array([
+      vertices[0],
+      vertices[1],
+      vertices[2], // First vertex
+      vertices[3],
+      vertices[4],
+      vertices[5], // Second vertex
+      vertices[6],
+      vertices[7],
+      vertices[8], // Third vertex
+      vertices[9],
+      vertices[10],
+      vertices[11], // Fourth vertex
 
-      1.0,
-      1.0,
-      1.0, // v3
-      -1.0,
-      1.0,
-      1.0, // v4
-      -1.0,
-      -1.0,
-      1.0, // v5
+      vertices[0],
+      vertices[1],
+      vertices[2] + height, // First vertex (top)
+      vertices[3],
+      vertices[4],
+      vertices[5] + height, // Second vertex (top)
+      vertices[6],
+      vertices[7],
+      vertices[8] + height, // Third vertex (top)
+      vertices[9],
+      vertices[10],
+      vertices[11] + height, // Fourth vertex (top)
     ]);
 
-    // itemSize = 3 because there are 3 values (components) per vertex
-    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
-    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const mesh = new THREE.Mesh(geometry, material);
-    return mesh;
+    // Define the indices for the faces
+    const indices = [
+      // Bottom face
+      0, 1, 2, 2, 3, 0,
+      // Top face
+      4, 5, 6, 6, 7, 4,
+      // Side faces
+      0, 1, 5, 5, 4, 0, 1, 2, 6, 6, 5, 1, 2, 3, 7, 7, 6, 2, 3, 0, 4, 4, 7, 3,
+    ];
+
+    // Create a new BufferGeometry with the new positions and indices
+    const extrudedGeometry = new THREE.BufferGeometry();
+    extrudedGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3)
+    );
+    extrudedGeometry.setIndex(indices);
+    extrudedGeometry.computeVertexNormals();
+
+    // Create a new mesh with the extruded geometry and the same material
+    const extrudedMesh = new THREE.Mesh(extrudedGeometry, plane.material);
+    scene.add(extrudedMesh);
   };
 
   return {
@@ -201,7 +205,7 @@ export const useMesh = () => {
     createOutline,
     createDot,
     combineMesh,
-    testMesh,
+    addHeight,
     getVertices,
   };
 };

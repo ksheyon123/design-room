@@ -19,7 +19,7 @@ type ToolItem = {
 
 export const ToolBox = ({ scene }: IProps) => {
   const { scene: rootScene } = useContext(ThreeContext);
-  const { combineMesh, testMesh } = useMesh();
+  const { combineMesh, addHeight } = useMesh();
   const { toggleModal } = useContext(ModalContext);
 
   const TOOL_ITEMS: ToolItem[] = [
@@ -34,12 +34,8 @@ export const ToolBox = ({ scene }: IProps) => {
       onClick: combineMesh,
     },
     {
-      label: "Remove",
-      onClick: () => {},
-    },
-    {
-      label: "Test",
-      onClick: testMesh,
+      label: "addHeight",
+      onClick: addHeight,
     },
   ];
 
@@ -55,9 +51,9 @@ export const ToolBox = ({ scene }: IProps) => {
               if (onClick) {
                 const plane = onClick(scene);
                 rootScene?.add(plane);
-                // if (toggleModal) {
-                //   toggleModal();
-                // }
+                if (toggleModal) {
+                  toggleModal();
+                }
               } else {
                 setItems((prev: ToolItem[]) => {
                   const newItems = {

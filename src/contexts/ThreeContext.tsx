@@ -42,8 +42,13 @@ export const ThreeProvider: React.FC<IProps> = ({ children }) => {
   const meshesRef = useRef<THREE.Object3D>();
   const { current } = meshesRef;
 
-  const init = () => {
+  const createScene = () => {
     const scene = new THREE.Scene();
+    return scene;
+  };
+
+  const init = () => {
+    const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer();
     setScene(scene);

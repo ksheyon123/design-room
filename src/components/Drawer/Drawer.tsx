@@ -30,7 +30,6 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     onPointMove,
     onPointKeydown,
     onPointKeyup,
-    setPosition,
     outliner,
     onPointOut,
     drawTempLine,

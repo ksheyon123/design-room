@@ -30,7 +30,7 @@ export const useRaycaster = (
    * @param v Current coordinate of mouse
    * @returns intersection coordinate
    */
-  const setPosition = (v) => {
+  const getIntersectPoint = (v: THREE.Vector2): THREE.Vector3 | undefined => {
     if (camera && scene) {
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(v, camera);
@@ -44,9 +44,7 @@ export const useRaycaster = (
     }
   };
 
-  const calAngle = () => {
-    const from = fromPointRef.current;
-    const to = toPointRef.current;
+  const calAngle = (from: THREE.Vector3, to: THREE.Vector3) => {
     if (from && to) {
       // Calculate the differences in x and y coordinates
       const dx = to.x - from.x;
@@ -91,39 +89,38 @@ export const useRaycaster = (
    */
   const onPointMove = (event: MouseEvent) => {
     // Get mouse coordinate
-    let x = (event.offsetX / width) * 2 - 1;
-    let y = -(event.offsetY / height) * 2 + 1;
-
     if (scene) {
-      const point =
-        setPosition(new THREE.Vector3(x, y, 0)) || new THREE.Vector3();
-      const dots = scene.children.filter((el: any) => el.name === "line-dot");
-      const [obj] = dots.filter((el) => {
-        const tP = el.position.clone();
-        if (
-          distanceFromPointToPoint(tP, new THREE.Vector3(point.x, point.y, 0)) <
-          1
-        ) {
-          return el;
+      let x = (event.offsetX / width) * 2 - 1;
+      let y = -(event.offsetY / height) * 2 + 1;
+
+      const point = getIntersectPoint(new THREE.Vector2(x, y));
+      if (point) {
+        const dots = scene.children.filter((el: any) => el.name === "line-dot"); // Scene의 Mesh들에서 name: line-dot 객체들을 가져옵니다.
+        const [obj] = dots.filter((el) => {
+          const tP = el.position.clone();
+          if (
+            distanceFromPointToPoint(
+              tP,
+              new THREE.Vector3(point.x, point.y, 0)
+            ) < 1
+          ) {
+            return el;
+          }
+        });
+        if (obj) {
+          toPointRef.current = obj.position.clone();
+        } else {
+          toPointRef.current = point.clone();
         }
-      });
-      if (obj) {
-        toPointRef.current = obj.position.clone();
-      } else {
-        toPointRef.current = point.clone();
       }
     }
-  };
-
-  const distanceFromPointToPoint = (p0: THREE.Vector3, p1: THREE.Vector3) => {
-    return p0.distanceTo(p1);
   };
 
   const onPointKeydown = (event) => {
     if (!isClickedRef.current) {
       const x = (event.offsetX / width) * 2 - 1;
       const y = -(event.offsetY / height) * 2 + 1;
-      const point = setPosition(new THREE.Vector3(x, y, 0));
+      const point = getIntersectPoint(new THREE.Vector2(x, y));
       if (point && scene) {
         const dots = scene.children.filter((el: any) => el.name === "line-dot");
         const [obj] = dots.filter((el) => {
@@ -157,9 +154,7 @@ export const useRaycaster = (
         const dots = scene.children.filter((el: any) => el.name === "line-dot");
         const [obj] = dots.filter((el) => {
           const tP = el.position.clone();
-          console.log(tP, new THREE.Vector3(x, y, 0));
           if (distanceFromPointToPoint(tP, new THREE.Vector3(x, y, 0)) < 1) {
-            console.log("EL:", el);
             return el;
           }
         });
@@ -167,13 +162,11 @@ export const useRaycaster = (
           const { x, y } = obj.position.clone();
           v.set(x, y, 0);
         } else {
-          console.log("No Obj");
           const { x, y } = toPointRef.current!;
           setInvisibleDot(x, y, 0);
           v.set(x, y, 0);
         }
         const lines = createLineMaterial(fromPointRef.current, v, "line");
-        console.log(scene.children);
         if (lines) {
           scene?.add(lines);
         }
@@ -190,6 +183,10 @@ export const useRaycaster = (
     if (tempLines) {
       tempLines.map((el) => el.removeFromParent());
     }
+  };
+
+  const distanceFromPointToPoint = (p0: THREE.Vector3, p1: THREE.Vector3) => {
+    return p0.distanceTo(p1);
   };
 
   const setInvisibleDot = (x, y, z) => {
@@ -243,39 +240,41 @@ export const useRaycaster = (
   };
 
   const chkLeftShift = () => {
-    let returnValue = {
-      x: toPointRef.current?.x,
-      y: toPointRef.current?.y,
-    };
-    const angle = calAngle();
-    if (isActiveKeys.current?.ShiftLeft || false) {
-      if (angle) {
-        if (angle < 45 && -45 <= angle) {
-          returnValue = {
-            ...returnValue,
-            y: fromPointRef.current?.y || 0,
-          };
-        } else if (angle < -45 && -135 <= angle) {
-          returnValue = {
-            ...returnValue,
-            x: fromPointRef.current?.x,
-          };
-        } else if (angle >= 45 && angle < 135) {
-          returnValue = {
-            ...returnValue,
-            x: fromPointRef.current?.x,
-          };
-        } else if (
-          (180 >= angle && angle >= 135) ||
-          (-180 >= angle && angle <= -135)
-        ) {
-          returnValue = {
-            ...returnValue,
-            y: fromPointRef.current?.y || 0,
-          };
+    if (fromPointRef.current && toPointRef.current) {
+      let returnValue = {
+        x: toPointRef.current?.x,
+        y: toPointRef.current?.y,
+      };
+      if (isActiveKeys.current?.ShiftLeft || false) {
+        const angle = calAngle(fromPointRef.current, toPointRef.current);
+        if (angle) {
+          if (angle < 45 && -45 <= angle) {
+            returnValue = {
+              ...returnValue,
+              y: fromPointRef.current?.y || 0,
+            };
+          } else if (angle < -45 && -135 <= angle) {
+            returnValue = {
+              ...returnValue,
+              x: fromPointRef.current?.x,
+            };
+          } else if (angle >= 45 && angle < 135) {
+            returnValue = {
+              ...returnValue,
+              x: fromPointRef.current?.x,
+            };
+          } else if (
+            (180 >= angle && angle >= 135) ||
+            (-180 >= angle && angle <= -135)
+          ) {
+            returnValue = {
+              ...returnValue,
+              y: fromPointRef.current?.y || 0,
+            };
+          }
         }
+        toPointRef.current = new THREE.Vector3(returnValue.x, returnValue.y, 0);
       }
-      toPointRef.current = new THREE.Vector3(returnValue.x, returnValue.y, 0);
     }
   };
 
@@ -311,7 +310,6 @@ export const useRaycaster = (
     onPointOut,
     onPointKeydown,
     onPointKeyup,
-    setPosition,
     drawTempLine,
     onKeydownHandler,
     onKeyupHandler,
