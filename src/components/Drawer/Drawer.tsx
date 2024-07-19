@@ -7,8 +7,7 @@ import { useMesh } from "@/hooks/useMesh";
 import { useRenederer } from "@/hooks/useRenderer";
 
 import styled from "styled-components";
-import { useRaycaster } from "@/hooks/useRaycaster";
-import { useLiner } from "@/hooks/useLiner";
+import { useLine } from "@/hooks/useLine";
 import { ToolBox } from "@/components/ToolBox/ToolBox";
 
 interface IProps {
@@ -25,18 +24,22 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   const { createCamera, moveCamera } = useCamera();
   const { createRenderer } = useRenederer();
   const { createPlane, createOutline } = useMesh();
-  const { start } = useLiner();
   const {
     onPointMove,
     onPointKeydown,
     onPointKeyup,
     outliner,
     onPointOut,
-    drawTempLine,
     onKeydownHandler,
     onKeyupHandler,
     chkLeftShift,
-  } = useRaycaster(width, height, sceneRef.current, cameraRef.current);
+
+    // TEST
+    drawLine,
+    getRef,
+    setInvisibleDot,
+    getNearest,
+  } = useLine(width, height, sceneRef.current, cameraRef.current);
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -64,10 +67,27 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
         cameraRef.current!.position.set(0, 0, 50);
         cameraRef.current!.lookAt(new THREE.Vector3(0, 0, 0));
-        outliner();
-        chkLeftShift();
-        drawTempLine();
 
+        // const dots = sceneRef.current!.children.filter(
+        //   (el: any) => el.name === "line-dot"
+        // );
+
+        let { from, to, cursor } = getRef();
+        if (!!from) {
+          const newPoint = getNearest(from);
+          from = newPoint;
+        }
+
+        if (!!to) {
+          const newPoint = getNearest(to);
+          to = newPoint;
+        }
+        outliner(cursor);
+        const straightPoint = chkLeftShift(from, cursor); //temp 없어도 될지도
+        if (straightPoint) {
+          to = new THREE.Vector3(straightPoint.x, straightPoint.y, 0);
+        }
+        drawLine(sceneRef.current, from, to || cursor);
         renderer.render(sceneRef.current!, cameraRef.current!);
       };
       animate();

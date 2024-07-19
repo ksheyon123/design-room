@@ -10,7 +10,7 @@ type LineType = THREE.Line<
   THREE.Object3DEventMap
 >;
 
-export const useRaycaster = (
+export const useLine = (
   width = 0,
   height = 0,
   scene?: THREE.Scene,
@@ -18,6 +18,7 @@ export const useRaycaster = (
 ) => {
   const { createDot, getVertices } = useMesh();
   const fromPointRef = useRef<THREE.Vector3 | null>();
+  const cursorPRef = useRef<THREE.Vector3 | null>();
   const toPointRef = useRef<THREE.Vector3 | null>();
 
   // For Checking the user click inside of the canvas
@@ -89,30 +90,12 @@ export const useRaycaster = (
    */
   const onPointMove = (event: MouseEvent) => {
     // Get mouse coordinate
-    if (scene) {
-      let x = (event.offsetX / width) * 2 - 1;
-      let y = -(event.offsetY / height) * 2 + 1;
+    let x = (event.offsetX / width) * 2 - 1;
+    let y = -(event.offsetY / height) * 2 + 1;
 
-      const point = getIntersectPoint(new THREE.Vector2(x, y));
-      if (point) {
-        const dots = scene.children.filter((el: any) => el.name === "line-dot"); // Scene의 Mesh들에서 name: line-dot 객체들을 가져옵니다.
-        const [obj] = dots.filter((el) => {
-          const tP = el.position.clone();
-          if (
-            distanceFromPointToPoint(
-              tP,
-              new THREE.Vector3(point.x, point.y, 0)
-            ) < 1
-          ) {
-            return el;
-          }
-        });
-        if (obj) {
-          toPointRef.current = obj.position.clone();
-        } else {
-          toPointRef.current = point.clone();
-        }
-      }
+    const point = getIntersectPoint(new THREE.Vector2(x, y));
+    if (point) {
+      cursorPRef.current = point.clone();
     }
   };
 
@@ -121,25 +104,8 @@ export const useRaycaster = (
       const x = (event.offsetX / width) * 2 - 1;
       const y = -(event.offsetY / height) * 2 + 1;
       const point = getIntersectPoint(new THREE.Vector2(x, y));
-      if (point && scene) {
-        const dots = scene.children.filter((el: any) => el.name === "line-dot");
-        const [obj] = dots.filter((el) => {
-          const tP = el.position.clone();
-          if (
-            distanceFromPointToPoint(
-              tP,
-              new THREE.Vector3(point.x, point.y, 0)
-            ) < 1
-          ) {
-            return el;
-          }
-        });
-        if (obj) {
-          fromPointRef.current = obj.position.clone();
-        } else {
-          setInvisibleDot(point.x, point.y, 0);
-          fromPointRef.current = point.clone();
-        }
+      if (point) {
+        fromPointRef.current = point.clone();
       }
     }
 
@@ -148,33 +114,23 @@ export const useRaycaster = (
 
   const onPointKeyup = (event: MouseEvent) => {
     if (isClickedRef.current) {
-      let v = new THREE.Vector3();
-      if (scene) {
-        const { x, y } = toPointRef.current!;
-        const dots = scene.children.filter((el: any) => el.name === "line-dot");
-        const [obj] = dots.filter((el) => {
-          const tP = el.position.clone();
-          if (distanceFromPointToPoint(tP, new THREE.Vector3(x, y, 0)) < 1) {
-            return el;
-          }
-        });
-        if (obj) {
-          const { x, y } = obj.position.clone();
-          v.set(x, y, 0);
-        } else {
-          const { x, y } = toPointRef.current!;
-          setInvisibleDot(x, y, 0);
-          v.set(x, y, 0);
-        }
-        const lines = createLineMaterial(fromPointRef.current, v, "line");
-        if (lines) {
-          scene?.add(lines);
-        }
+      const x = (event.offsetX / width) * 2 - 1;
+      const y = -(event.offsetY / height) * 2 + 1;
+      const point = getIntersectPoint(new THREE.Vector2(x, y));
+      if (point) {
+        toPointRef.current = point.clone();
       }
+
+      isClickedRef.current = !isClickedRef.current;
     }
-    fromPointRef.current = null;
-    toPointRef.current = null;
-    isClickedRef.current = !isClickedRef.current;
+  };
+
+  const getRef = () => {
+    return {
+      from: fromPointRef.current,
+      to: toPointRef.current,
+      cursor: cursorPRef.current,
+    };
   };
 
   const onPointOut = () => {
@@ -183,10 +139,6 @@ export const useRaycaster = (
     if (tempLines) {
       tempLines.map((el) => el.removeFromParent());
     }
-  };
-
-  const distanceFromPointToPoint = (p0: THREE.Vector3, p1: THREE.Vector3) => {
-    return p0.distanceTo(p1);
   };
 
   const setInvisibleDot = (x, y, z) => {
@@ -202,13 +154,12 @@ export const useRaycaster = (
     return numerator / denominator;
   };
 
-  const getPointerToLineDistance = () => {
+  const getPointerToLineDistance = (to) => {
     const lines = scene?.children.filter(
       (el: any) => el.name === "line"
     ) as LineType[];
-    const dots = scene?.children.filter((el: any) => el.name === "line-dot");
-    if (lines && toPointRef.current) {
-      const { x: x0, y: y0 } = toPointRef.current;
+    if (lines && to) {
+      const { x: x0, y: y0 } = to;
 
       let arr: { line: LineType; distance: number }[] = new Array();
       lines.map((line) => {
@@ -225,13 +176,33 @@ export const useRaycaster = (
     }
   };
 
-  const outliner = () => {
-    const linesWithDistance = getPointerToLineDistance();
+  const getNearest = (point: THREE.Vector3) => {
+    const lines = scene?.children.filter(
+      (el: any) => el.name === "line"
+    ) as LineType[];
+    if (lines && point) {
+      lines.map((line) => {
+        const [start, end] = getVertices(line);
+        const startPoint = new THREE.Vector3(start.x, start.y, 0);
+        const endPoint = new THREE.Vector3(end.x, end.y, 0);
+
+        if (startPoint.distanceTo(point) < 2) {
+          return startPoint;
+        } else if (endPoint.distanceTo(point) < 2) {
+          return endPoint;
+        }
+      });
+    }
+    return point;
+  };
+
+  const outliner = (to) => {
+    const linesWithDistance = getPointerToLineDistance(to);
     if (linesWithDistance && linesWithDistance.length > 0) {
       const { line, distance } = linesWithDistance.reduce((prev, curr) =>
         prev.distance < curr.distance ? prev : curr
       );
-      if (!(distance < 0.5)) {
+      if (distance < 0.5) {
         line.material.color.set(0x000000);
       } else {
         linesWithDistance.map(({ line }) => line.material.color.set(0xff0000));
@@ -239,42 +210,42 @@ export const useRaycaster = (
     }
   };
 
-  const chkLeftShift = () => {
-    if (fromPointRef.current && toPointRef.current) {
+  const chkLeftShift = (from, to) => {
+    if (from && to) {
       let returnValue = {
-        x: toPointRef.current?.x,
-        y: toPointRef.current?.y,
+        x: to.x,
+        y: to.y,
       };
       if (isActiveKeys.current?.ShiftLeft || false) {
-        const angle = calAngle(fromPointRef.current, toPointRef.current);
+        const angle = calAngle(from, to);
         if (angle) {
           if (angle < 45 && -45 <= angle) {
-            returnValue = {
+            return {
               ...returnValue,
-              y: fromPointRef.current?.y || 0,
+              y: from.y || 0,
             };
           } else if (angle < -45 && -135 <= angle) {
-            returnValue = {
+            return {
               ...returnValue,
-              x: fromPointRef.current?.x,
+              x: from.x,
             };
           } else if (angle >= 45 && angle < 135) {
-            returnValue = {
+            return {
               ...returnValue,
-              x: fromPointRef.current?.x,
+              x: from.x,
             };
           } else if (
             (180 >= angle && angle >= 135) ||
             (-180 >= angle && angle <= -135)
           ) {
-            returnValue = {
+            return {
               ...returnValue,
-              y: fromPointRef.current?.y || 0,
+              y: from.y || 0,
             };
           }
         }
-        toPointRef.current = new THREE.Vector3(returnValue.x, returnValue.y, 0);
       }
+      return returnValue;
     }
   };
 
@@ -293,15 +264,20 @@ export const useRaycaster = (
     }
   };
 
-  const drawTempLine = () => {
-    if (scene) {
-      const tempLines = scene?.children.filter((el) => el.name === "tempLine");
-      tempLines.map((el) => el.removeFromParent());
-    }
+  const drawLine = (scene, from, to) => {
+    const tempLines = scene?.children.filter((el) => el.name === "tempLine");
+    tempLines.map((el) => el?.removeFromParent());
 
-    const lines = createLineMaterial(fromPointRef.current, toPointRef.current);
-    if (lines) {
+    if (isClickedRef.current) {
+      const lines = createLineMaterial(from, to);
       scene?.add(lines);
+    } else {
+      if (from && to) {
+        const lines = createLineMaterial(from, to, "line");
+        scene?.add(lines);
+        fromPointRef.current = null;
+        toPointRef.current = null;
+      }
     }
   };
 
@@ -310,10 +286,15 @@ export const useRaycaster = (
     onPointOut,
     onPointKeydown,
     onPointKeyup,
-    drawTempLine,
+
     onKeydownHandler,
     onKeyupHandler,
     chkLeftShift,
     outliner,
+    drawLine,
+    getRef,
+    getIntersectPoint,
+    setInvisibleDot,
+    getNearest,
   };
 };
