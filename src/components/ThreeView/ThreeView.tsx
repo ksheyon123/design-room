@@ -16,7 +16,7 @@ import { useMesh } from "@/hooks/useMesh";
 
 const ThreeView: React.FC = () => {
   const { scene, camera, renderer } = useContext(ThreeContext);
-  // const { createPlane } = useMesh();
+  const { createPlane } = useMesh();
   const {
     zoomCamera,
     moveCamera,
@@ -24,12 +24,13 @@ const ThreeView: React.FC = () => {
     handleMouseUpEvent,
     handleMouseMoveEvent,
   } = useCamera();
-  const { getIntersectPoint } = useLine(
-    window.innerWidth,
-    window.innerHeight,
-    scene,
-    camera
-  );
+  const {
+    getRef,
+    onPointKeydown,
+    onPointKeyup,
+    onPointMove,
+    getIntersectPoint,
+  } = useLine(window.innerWidth, window.innerHeight, scene, camera);
   const canvasRef = useRef<HTMLDivElement>();
 
   const [isRendered, setIsRendered] = useState<boolean>(false);
@@ -37,14 +38,29 @@ const ThreeView: React.FC = () => {
   useEffect(() => {
     if (renderer && scene && camera) {
       canvasRef.current && canvasRef.current.appendChild(renderer.domElement);
-      // const plane = createPlane("plane", 100, 100, 0xff0000);
-      // scene.add(plane);
+      const plane = createPlane(
+        "floor",
+        window.innerWidth,
+        window.innerHeight,
+        0xffffff
+      );
+
+      scene.add(plane);
 
       camera.position.set(0, 0, 30);
       camera.lookAt(new THREE.Vector3(0, 0, 0));
       let handleId: any;
       const animate = () => {
         handleId = requestAnimationFrame(animate);
+
+        const { from } = getRef();
+        if (from) {
+          const data = getIntersectPoint(
+            new THREE.Vector2(from.x, from.y),
+            "plane"
+          );
+          // console.log(data?.object);
+        }
 
         renderer.render(scene, camera);
       };
@@ -70,24 +86,30 @@ const ThreeView: React.FC = () => {
 
         ref.addEventListener("mousedown", (e) => {
           handleMouseDownEvent(e);
+          onPointKeydown(e);
         });
         ref.addEventListener("mouseup", (e) => {
           handleMouseUpEvent(e);
+          onPointKeyup(e);
         });
         ref.addEventListener("mousemove", (e) => {
           handleMouseMoveEvent(e);
+          onPointMove(e);
         });
         ref.addEventListener("mouseout", handleMouseUpEvent);
         ref.addEventListener("wheel", handleMouseWheelEvent);
         return () => {
           ref.removeEventListener("mousedown", (e) => {
             handleMouseDownEvent(e);
+            onPointKeydown(e);
           });
           ref.removeEventListener("mouseup", (e) => {
             handleMouseUpEvent(e);
+            onPointKeyup(e);
           });
           ref.removeEventListener("mousemove", (e) => {
             handleMouseMoveEvent(e);
+            onPointMove(e);
           });
           ref.removeEventListener("mouseout", handleMouseUpEvent);
           ref.removeEventListener("wheel", handleMouseWheelEvent);

@@ -74,10 +74,10 @@ export const useMesh = () => {
   const combineMesh = (scene: THREE.Scene) => {
     const lines = scene.children.filter((el) => el.name === "line");
 
-    if (lines.length < 4) {
-      console.error("Not enough lines to form a plane");
-      return null;
-    }
+    // if (lines.length < 4) {
+    //   console.error("Not enough lines to form a plane");
+    //   return null;
+    // }
 
     // Retrieve vertices from the lines
     const vertices: THREE.Vector3[] = [];
@@ -86,6 +86,7 @@ export const useMesh = () => {
       vertices.push(start, end);
     });
 
+    console.log(vertices);
     // Ensure we have unique vertices
     const uniqueVertices = Array.from(
       new Set(vertices.map((v) => `${v.x},${v.y},${0}`))

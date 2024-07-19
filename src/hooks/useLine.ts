@@ -31,16 +31,18 @@ export const useLine = (
    * @param v Current coordinate of mouse
    * @returns intersection coordinate
    */
-  const getIntersectPoint = (v: THREE.Vector2): THREE.Vector3 | undefined => {
+  const getIntersectPoint = (v: THREE.Vector2, name = "floor") => {
     if (camera && scene) {
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(v, camera);
       // calculate objects intersecting the picking ray
-      const intersects = raycaster.intersectObjects(scene.children);
+      const intersects = raycaster.intersectObjects(
+        scene.children.filter((el) => el.name === name)
+      );
 
       for (let i = 0; i < intersects.length; i++) {
-        const { point } = intersects[i];
-        return point;
+        const { point, object } = intersects[i];
+        return { point, object };
       }
     }
   };
@@ -93,7 +95,8 @@ export const useLine = (
     let x = (event.offsetX / width) * 2 - 1;
     let y = -(event.offsetY / height) * 2 + 1;
 
-    const point = getIntersectPoint(new THREE.Vector2(x, y));
+    const data = getIntersectPoint(new THREE.Vector2(x, y));
+    const point = data?.point;
     if (point) {
       cursorPRef.current = point.clone();
     }
@@ -103,7 +106,8 @@ export const useLine = (
     if (!isClickedRef.current) {
       const x = (event.offsetX / width) * 2 - 1;
       const y = -(event.offsetY / height) * 2 + 1;
-      const point = getIntersectPoint(new THREE.Vector2(x, y));
+      const data = getIntersectPoint(new THREE.Vector2(x, y));
+      const point = data?.point;
       if (point) {
         fromPointRef.current = point.clone();
       }
@@ -116,7 +120,8 @@ export const useLine = (
     if (isClickedRef.current) {
       const x = (event.offsetX / width) * 2 - 1;
       const y = -(event.offsetY / height) * 2 + 1;
-      const point = getIntersectPoint(new THREE.Vector2(x, y));
+      const data = getIntersectPoint(new THREE.Vector2(x, y));
+      const point = data?.point;
       if (point) {
         toPointRef.current = point.clone();
       }
@@ -139,13 +144,6 @@ export const useLine = (
     if (tempLines) {
       tempLines.map((el) => el.removeFromParent());
     }
-  };
-
-  const setInvisibleDot = (x, y, z) => {
-    const dot = createDot();
-    dot.position.set(x, y, z);
-    dot.name = "line-dot";
-    scene?.add(dot);
   };
 
   const distanceFromPointToLine = (x1, y1, x2, y2, x0, y0) => {
@@ -180,18 +178,24 @@ export const useLine = (
     const lines = scene?.children.filter(
       (el: any) => el.name === "line"
     ) as LineType[];
-    if (lines && point) {
+    if (lines.length > 0) {
+      let inRange: THREE.Vector3[] = [];
       lines.map((line) => {
         const [start, end] = getVertices(line);
         const startPoint = new THREE.Vector3(start.x, start.y, 0);
         const endPoint = new THREE.Vector3(end.x, end.y, 0);
 
         if (startPoint.distanceTo(point) < 2) {
+          inRange.push(startPoint);
           return startPoint;
         } else if (endPoint.distanceTo(point) < 2) {
-          return endPoint;
+          inRange.push(endPoint);
         }
       });
+      if (inRange.length > 0) {
+        console.log(inRange);
+        return new THREE.Vector3(inRange[0].x, inRange[0].y, 0);
+      }
     }
     return point;
   };
@@ -268,7 +272,8 @@ export const useLine = (
     const tempLines = scene?.children.filter((el) => el.name === "tempLine");
     tempLines.map((el) => el?.removeFromParent());
 
-    if (isClickedRef.current) {
+    if (isClickedRef.current && to) {
+      console.log("DRAW : ", to);
       const lines = createLineMaterial(from, to);
       scene?.add(lines);
     } else {
@@ -282,19 +287,18 @@ export const useLine = (
   };
 
   return {
+    getRef,
+
     onPointMove,
     onPointOut,
     onPointKeydown,
     onPointKeyup,
-
     onKeydownHandler,
     onKeyupHandler,
+    getIntersectPoint,
     chkLeftShift,
     outliner,
     drawLine,
-    getRef,
-    getIntersectPoint,
-    setInvisibleDot,
     getNearest,
   };
 };
