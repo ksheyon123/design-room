@@ -159,16 +159,6 @@ export const useMesh = (
 
   const addHeight = () => {
     let height = deltaRef.current;
-    // deltaRef.current > 10
-    //   ? 3
-    //   : deltaRef.current <= 10 && deltaRef.current > 0
-    //   ? 1
-    //   : deltaRef.current === 0
-    //   ? 0
-    //   : deltaRef.current < 0 && deltaRef.current >= -10
-    //   ? -1
-    //   : -3;
-    console.log(height);
     const plane = scene!.children.filter((el) => el.name === "plane")[0] as any;
     if (plane) {
       const vertices = plane.geometry.attributes.position.array;
