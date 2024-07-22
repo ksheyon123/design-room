@@ -8,7 +8,6 @@ import React, {
   useState,
 } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { ThreeContext } from "@/contexts/ThreeContext";
 import { useCamera } from "@/hooks/useCamera";
 import { useLine } from "@/hooks/useLine";
