@@ -23,7 +23,10 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
   const { createCamera, moveCamera } = useCamera();
   const { createRenderer } = useRenederer();
-  const { createPlane, createOutline } = useMesh();
+  const { createPlane, createOutline } = useMesh(
+    sceneRef.current,
+    cameraRef.current
+  );
   const {
     onPointMove,
     onPointKeydown,

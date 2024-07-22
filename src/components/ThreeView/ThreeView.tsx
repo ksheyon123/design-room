@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import * as THREE from "three";
-
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { ThreeContext } from "@/contexts/ThreeContext";
 import { useCamera } from "@/hooks/useCamera";
 import { useLine } from "@/hooks/useLine";
@@ -16,7 +16,14 @@ import { useMesh } from "@/hooks/useMesh";
 
 const ThreeView: React.FC = () => {
   const { scene, camera, renderer } = useContext(ThreeContext);
-  const { createPlane } = useMesh();
+  const {
+    onMouseKeydown,
+    onMouseKeyup,
+    onMouseMove,
+    createPlane,
+    getCoord,
+    addHeight,
+  } = useMesh(scene, camera);
   const {
     zoomCamera,
     moveCamera,
@@ -47,21 +54,26 @@ const ThreeView: React.FC = () => {
 
       scene.add(plane);
 
-      camera.position.set(0, 0, 30);
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
+      // const controls = new OrbitControls(camera, renderer.domElement);
+      camera.position.set(0, 10, 30);
+      // camera.lookAt(new THREE.Vector3(0, 0, 0));
+      // controls.update();
+
       let handleId: any;
       const animate = () => {
         handleId = requestAnimationFrame(animate);
-
-        const { from } = getRef();
-        if (from) {
-          const data = getIntersectPoint(
-            new THREE.Vector2(from.x, from.y),
+        const coord = getCoord();
+        if (coord) {
+          const intersect = getIntersectPoint(
+            new THREE.Vector2(coord.x, coord.y),
             "plane"
           );
-          // console.log(data?.object);
+          if (intersect) {
+            const { object } = intersect;
+          }
         }
-
+        addHeight();
+        // controls.update();
         renderer.render(scene, camera);
       };
       animate();
@@ -71,6 +83,7 @@ const ThreeView: React.FC = () => {
   }, [renderer, scene, camera]);
 
   useEffect(() => {
+    const mouseMoveEvent = onMouseMove();
     if (isRendered) {
       const ref = canvasRef.current;
       if (ref) {
@@ -86,30 +99,30 @@ const ThreeView: React.FC = () => {
 
         ref.addEventListener("mousedown", (e) => {
           handleMouseDownEvent(e);
-          onPointKeydown(e);
+          onMouseKeydown(e);
         });
         ref.addEventListener("mouseup", (e) => {
           handleMouseUpEvent(e);
-          onPointKeyup(e);
+          onMouseKeyup();
         });
         ref.addEventListener("mousemove", (e) => {
           handleMouseMoveEvent(e);
-          onPointMove(e);
+          mouseMoveEvent(e);
         });
         ref.addEventListener("mouseout", handleMouseUpEvent);
         ref.addEventListener("wheel", handleMouseWheelEvent);
         return () => {
           ref.removeEventListener("mousedown", (e) => {
             handleMouseDownEvent(e);
-            onPointKeydown(e);
+            onMouseKeydown(e);
           });
           ref.removeEventListener("mouseup", (e) => {
             handleMouseUpEvent(e);
-            onPointKeyup(e);
+            onMouseKeyup();
           });
           ref.removeEventListener("mousemove", (e) => {
             handleMouseMoveEvent(e);
-            onPointMove(e);
+            mouseMoveEvent(e);
           });
           ref.removeEventListener("mouseout", handleMouseUpEvent);
           ref.removeEventListener("wheel", handleMouseWheelEvent);

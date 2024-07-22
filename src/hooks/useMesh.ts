@@ -1,31 +1,10 @@
+import { useRef } from "react";
 import * as THREE from "three";
 
-export const useMesh = () => {
-  const createPlaidTexture = () => {
-    const size = 600;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const context = canvas.getContext("2d")!;
-
-    // Define colors for the plaid pattern
-    const colors = ["#000000", "#FFFFFF"];
-
-    // Draw vertical stripes
-    for (let i = 0; i < size; i += 10) {
-      context.fillStyle = colors[i % 2];
-      context.fillRect(i, 0, 10, size);
-    }
-
-    // Draw horizontal stripes
-    for (let i = 0; i < size; i += 10) {
-      context.fillStyle = colors[i % 2];
-      context.fillRect(0, i, size, 10);
-    }
-
-    return new THREE.CanvasTexture(canvas);
-  };
-
+export const useMesh = (
+  scene?: THREE.Scene,
+  camera?: THREE.PerspectiveCamera
+) => {
   const createDot = () => {
     const geometry = new THREE.CircleGeometry(0.1, 32);
     const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -86,7 +65,6 @@ export const useMesh = () => {
       vertices.push(start, end);
     });
 
-    console.log(vertices);
     // Ensure we have unique vertices
     const uniqueVertices = Array.from(
       new Set(vertices.map((v) => `${v.x},${v.y},${0}`))
@@ -143,68 +121,122 @@ export const useMesh = () => {
     return plane;
   };
 
-  const addHeight = (scene: THREE.Scene) => {
-    let height = 10;
-    const plane = scene.children.filter((el) => el.name === "plane")[0] as any;
-    const vertices = plane.geometry.attributes.position.array;
+  const mouseCoordRef = useRef<THREE.Vector3 | null>();
+  const isClickedRef = useRef<boolean>(false);
+  const deltaRef = useRef<number>(0);
 
-    // Define the positions for the new geometry with height
-    const positions = new Float32Array([
-      vertices[0],
-      vertices[1],
-      vertices[2], // First vertex
-      vertices[3],
-      vertices[4],
-      vertices[5], // Second vertex
-      vertices[6],
-      vertices[7],
-      vertices[8], // Third vertex
-      vertices[9],
-      vertices[10],
-      vertices[11], // Fourth vertex
+  const onMouseKeydown = (event: MouseEvent) => {
+    // Get mouse coordinate
+    let x = (event.offsetX / window.innerWidth) * 2 - 1;
+    let y = -(event.offsetY / window.innerHeight) * 2 + 1;
+    mouseCoordRef.current = new THREE.Vector3(x, y, 0);
+    isClickedRef.current = true;
+  };
 
-      vertices[0],
-      vertices[1],
-      vertices[2] + height, // First vertex (top)
-      vertices[3],
-      vertices[4],
-      vertices[5] + height, // Second vertex (top)
-      vertices[6],
-      vertices[7],
-      vertices[8] + height, // Third vertex (top)
-      vertices[9],
-      vertices[10],
-      vertices[11] + height, // Fourth vertex (top)
-    ]);
+  const onMouseKeyup = () => {
+    // Get mouse coordinate
+    isClickedRef.current = false;
+  };
 
-    // Define the indices for the faces
-    const indices = [
-      // Bottom face
-      0, 1, 2, 2, 3, 0,
-      // Top face
-      4, 5, 6, 6, 7, 4,
-      // Side faces
-      0, 1, 5, 5, 4, 0, 1, 2, 6, 6, 5, 1, 2, 3, 7, 7, 6, 2, 3, 0, 4, 4, 7, 3,
-    ];
+  const onMouseMove = () => {
+    let prev = 0;
+    let timerId: any;
+    const getDelta = (event: MouseEvent) => {
+      clearTimeout(timerId);
+      deltaRef.current = prev - event?.pageY;
+      prev = event?.pageY;
+      timerId = setTimeout(() => {
+        deltaRef.current = 0;
+      }, 100);
+    };
 
-    // Create a new BufferGeometry with the new positions and indices
-    const extrudedGeometry = new THREE.BufferGeometry();
-    extrudedGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
-    extrudedGeometry.setIndex(indices);
-    extrudedGeometry.computeVertexNormals();
+    return getDelta;
+  };
 
-    // Create a new mesh with the extruded geometry and the same material
-    const extrudedMesh = new THREE.Mesh(extrudedGeometry, plane.material);
-    scene.add(extrudedMesh);
+  const getCoord = () => {
+    return mouseCoordRef.current;
+  };
+
+  const addHeight = () => {
+    let height = deltaRef.current;
+    // deltaRef.current > 10
+    //   ? 3
+    //   : deltaRef.current <= 10 && deltaRef.current > 0
+    //   ? 1
+    //   : deltaRef.current === 0
+    //   ? 0
+    //   : deltaRef.current < 0 && deltaRef.current >= -10
+    //   ? -1
+    //   : -3;
+    console.log(height);
+    const plane = scene!.children.filter((el) => el.name === "plane")[0] as any;
+    if (plane) {
+      const vertices = plane.geometry.attributes.position.array;
+
+      // Define the positions for the new geometry with height
+      const positions = new Float32Array([
+        vertices[0],
+        vertices[1],
+        vertices[2], // First vertex
+        vertices[3],
+        vertices[4],
+        vertices[5], // Second vertex
+        vertices[6],
+        vertices[7],
+        vertices[8], // Third vertex
+        vertices[9],
+        vertices[10],
+        vertices[11], // Fourth vertex
+
+        vertices[0],
+        vertices[1],
+        vertices[2] + height, // First vertex (top)
+        vertices[3],
+        vertices[4],
+        vertices[5] + height, // Second vertex (top)
+        vertices[6],
+        vertices[7],
+        vertices[8] + height, // Third vertex (top)
+        vertices[9],
+        vertices[10],
+        vertices[11] + height, // Fourth vertex (top)
+      ]);
+
+      // Define the indices for the faces
+      const indices = [
+        // Bottom face
+        0, 1, 2, 2, 3, 0,
+        // Top face
+        4, 5, 6, 6, 7, 4,
+        // Side faces
+        0, 1, 5, 5, 4, 0, 1, 2, 6, 6, 5, 1, 2, 3, 7, 7, 6, 2, 3, 0, 4, 4, 7, 3,
+      ];
+
+      // Create a new BufferGeometry with the new positions and indices
+      const extrudedGeometry = new THREE.BufferGeometry();
+      extrudedGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3)
+      );
+      extrudedGeometry.setIndex(indices);
+      extrudedGeometry.computeVertexNormals();
+
+      // Create a new mesh with the extruded geometry and the same material
+      const extrudedMesh = new THREE.Mesh(extrudedGeometry, plane.material);
+      scene!.add(extrudedMesh);
+    }
   };
 
   return {
+    onMouseKeydown,
+    onMouseKeyup,
+    onMouseMove,
+
     createPlane,
     createOutline,
     createDot,
+
+    getCoord,
     combineMesh,
     addHeight,
     getVertices,
