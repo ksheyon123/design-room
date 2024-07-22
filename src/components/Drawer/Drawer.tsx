@@ -35,6 +35,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     chkLeftShift,
 
     // TEST
+    drawGuidance,
     drawLine,
     getRef,
     getNearest,
@@ -68,22 +69,12 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
         cameraRef.current!.lookAt(new THREE.Vector3(0, 0, 0));
 
         let { from, to, cursor } = getRef();
-        if (!!from) {
-          const newPoint = getNearest(from);
-          from = newPoint;
-        }
-
-        if (!!to) {
-          const newPoint = getNearest(to);
-          console.log("TO : ", newPoint);
-          to = newPoint;
-        }
+        const newPointFrom = getNearest(from);
+        const newPointTo = getNearest(to);
         outliner(cursor);
-        const straightPoint = chkLeftShift(from, cursor); //temp 없어도 될지도
-        if (straightPoint) {
-          to = new THREE.Vector3(straightPoint.x, straightPoint.y, 0);
-        }
-        drawLine(sceneRef.current, from, to || cursor);
+        const { to: withStraightTo } = chkLeftShift(newPointFrom, newPointTo); //cursor 없어도 될지도
+        drawGuidance(sceneRef.current, newPointFrom, cursor);
+        drawLine(sceneRef.current, newPointFrom, withStraightTo);
         renderer.render(sceneRef.current!, cameraRef.current!);
       };
       animate();

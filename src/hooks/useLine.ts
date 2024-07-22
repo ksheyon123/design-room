@@ -17,9 +17,9 @@ export const useLine = (
   camera?: THREE.PerspectiveCamera
 ) => {
   const { createDot, getVertices } = useMesh();
-  const fromPointRef = useRef<THREE.Vector3 | null>();
-  const cursorPRef = useRef<THREE.Vector3 | null>();
-  const toPointRef = useRef<THREE.Vector3 | null>();
+  const fromPointRef = useRef<THREE.Vector3 | null>(null);
+  const cursorPRef = useRef<THREE.Vector3 | null>(null);
+  const toPointRef = useRef<THREE.Vector3 | null>(null);
 
   // For Checking the user click inside of the canvas
   const isClickedRef = useRef<boolean>(false);
@@ -174,30 +174,32 @@ export const useLine = (
     }
   };
 
-  const getNearest = (point: THREE.Vector3) => {
-    const lines = scene?.children.filter(
-      (el: any) => el.name === "line"
-    ) as LineType[];
-    if (lines.length > 0) {
-      let inRange: THREE.Vector3[] = [];
-      lines.map((line) => {
-        const [start, end] = getVertices(line);
-        const startPoint = new THREE.Vector3(start.x, start.y, 0);
-        const endPoint = new THREE.Vector3(end.x, end.y, 0);
+  const getNearest = (point: THREE.Vector3 | null) => {
+    if (point) {
+      const lines = scene?.children.filter(
+        (el: any) => el.name === "line"
+      ) as LineType[];
+      if (lines.length > 0) {
+        let inRange: THREE.Vector3[] = [];
+        lines.map((line) => {
+          const [start, end] = getVertices(line);
+          const startPoint = new THREE.Vector3(start.x, start.y, 0);
+          const endPoint = new THREE.Vector3(end.x, end.y, 0);
 
-        if (startPoint.distanceTo(point) < 2) {
-          inRange.push(startPoint);
-          return startPoint;
-        } else if (endPoint.distanceTo(point) < 2) {
-          inRange.push(endPoint);
+          if (startPoint.distanceTo(point) < 2) {
+            inRange.push(startPoint);
+            return startPoint;
+          } else if (endPoint.distanceTo(point) < 2) {
+            inRange.push(endPoint);
+          }
+        });
+        if (inRange.length > 0) {
+          console.log(inRange);
+          return new THREE.Vector3(inRange[0].x, inRange[0].y, 0);
         }
-      });
-      if (inRange.length > 0) {
-        console.log(inRange);
-        return new THREE.Vector3(inRange[0].x, inRange[0].y, 0);
       }
+      return point;
     }
-    return point;
   };
 
   const outliner = (to) => {
@@ -216,41 +218,47 @@ export const useLine = (
 
   const chkLeftShift = (from, to) => {
     if (from && to) {
-      let returnValue = {
-        x: to.x,
-        y: to.y,
-      };
       if (isActiveKeys.current?.ShiftLeft || false) {
         const angle = calAngle(from, to);
         if (angle) {
           if (angle < 45 && -45 <= angle) {
             return {
-              ...returnValue,
-              y: from.y || 0,
+              to: {
+                ...to,
+                y: from.y || 0,
+              },
             };
           } else if (angle < -45 && -135 <= angle) {
             return {
-              ...returnValue,
-              x: from.x,
+              to: {
+                ...to,
+                x: from.x,
+              },
             };
           } else if (angle >= 45 && angle < 135) {
             return {
-              ...returnValue,
-              x: from.x,
+              to: {
+                ...to,
+                x: from.x,
+              },
             };
           } else if (
             (180 >= angle && angle >= 135) ||
             (-180 >= angle && angle <= -135)
           ) {
             return {
-              ...returnValue,
-              y: from.y || 0,
+              to: {
+                ...to,
+                y: from.y,
+              },
             };
           }
         }
       }
-      return returnValue;
     }
+    return {
+      to,
+    };
   };
 
   /**
@@ -268,21 +276,23 @@ export const useLine = (
     }
   };
 
-  const drawLine = (scene, from, to) => {
+  const drawGuidance = (scene, from, cursor) => {
     const tempLines = scene?.children.filter((el) => el.name === "tempLine");
     tempLines.map((el) => el?.removeFromParent());
-
-    if (isClickedRef.current && to) {
-      console.log("DRAW : ", to);
-      const lines = createLineMaterial(from, to);
+    if (isClickedRef.current && from && cursor) {
+      console.log("DRAW : ", cursor);
+      const lines = createLineMaterial(from, cursor);
       scene?.add(lines);
-    } else {
-      if (from && to) {
-        const lines = createLineMaterial(from, to, "line");
-        scene?.add(lines);
-        fromPointRef.current = null;
-        toPointRef.current = null;
-      }
+    }
+  };
+
+  const drawLine = (scene, from, to) => {
+    if (!isClickedRef.current && from && to) {
+      console.log("DRAW : ", to);
+      const lines = createLineMaterial(from, to, "line");
+      scene?.add(lines);
+      fromPointRef.current = null;
+      toPointRef.current = null;
     }
   };
 
@@ -298,6 +308,7 @@ export const useLine = (
     getIntersectPoint,
     chkLeftShift,
     outliner,
+    drawGuidance,
     drawLine,
     getNearest,
   };
