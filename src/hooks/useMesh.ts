@@ -40,6 +40,18 @@ export const useMesh = (
     outlineMesh.name = name;
     return outlineMesh;
   };
+  const getVerticesFromPlane = (geometry) => {
+    const positionAttribute = geometry.getAttribute("position");
+    const vertices: THREE.Vector3[] = [];
+
+    for (let i = 0; i < positionAttribute.count; i++) {
+      const vertex = new THREE.Vector3();
+      vertex.fromBufferAttribute(positionAttribute, i);
+      vertices.push(vertex);
+    }
+
+    return vertices;
+  };
 
   // Function to get the start and end points of a line
   const getVertices = (line) => {
@@ -158,38 +170,34 @@ export const useMesh = (
   };
 
   const addHeight = () => {
-    let height = deltaRef.current;
-    const plane = scene!.children.filter((el) => el.name === "plane")[0] as any;
+    const plane = scene!.children.filter(
+      (el) => el.name === "plane"
+    )[0] as THREE.Mesh<
+      THREE.PlaneGeometry,
+      THREE.MeshBasicMaterial,
+      THREE.Object3DEventMap
+    >;
     if (plane) {
-      const vertices = plane.geometry.attributes.position.array;
+      plane.removeFromParent();
+      let height = deltaRef.current;
+      const vertices = getVerticesFromPlane(plane.geometry);
 
+      console.log("vertices", vertices);
       // Define the positions for the new geometry with height
-      const positions = new Float32Array([
-        vertices[0],
-        vertices[1],
-        vertices[2], // First vertex
-        vertices[3],
-        vertices[4],
-        vertices[5], // Second vertex
-        vertices[6],
-        vertices[7],
-        vertices[8], // Third vertex
-        vertices[9],
-        vertices[10],
-        vertices[11], // Fourth vertex
+      const baseVertices = vertices.map((v) => [v.x, v.y, v.z]).flat();
+      const topVertices = vertices.map((v) => [v.x, v.y, v.z + height]).flat();
 
-        vertices[0],
-        vertices[1],
-        vertices[2] + height, // First vertex (top)
-        vertices[3],
-        vertices[4],
-        vertices[5] + height, // Second vertex (top)
-        vertices[6],
-        vertices[7],
-        vertices[8] + height, // Third vertex (top)
-        vertices[9],
-        vertices[10],
-        vertices[11] + height, // Fourth vertex (top)
+      const positionsWithHeight = new Float32Array([
+        ...baseVertices,
+        ...topVertices,
+        ...baseVertices.slice(0, 3),
+        ...topVertices.slice(0, 3),
+        ...baseVertices.slice(3, 6),
+        ...topVertices.slice(3, 6),
+        ...baseVertices.slice(6, 9),
+        ...topVertices.slice(6, 9),
+        ...baseVertices.slice(9, 12),
+        ...topVertices.slice(9, 12),
       ]);
 
       // Define the indices for the faces
@@ -202,18 +210,25 @@ export const useMesh = (
         0, 1, 5, 5, 4, 0, 1, 2, 6, 6, 5, 1, 2, 3, 7, 7, 6, 2, 3, 0, 4, 4, 7, 3,
       ];
 
-      // Create a new BufferGeometry with the new positions and indices
-      const extrudedGeometry = new THREE.BufferGeometry();
-      extrudedGeometry.setAttribute(
+      const geometryWithHeight = new THREE.BufferGeometry();
+      geometryWithHeight.setAttribute(
         "position",
-        new THREE.BufferAttribute(positions, 3)
+        new THREE.BufferAttribute(positionsWithHeight, 3)
       );
-      extrudedGeometry.setIndex(indices);
-      extrudedGeometry.computeVertexNormals();
+      geometryWithHeight.setIndex(indices);
+      geometryWithHeight.computeVertexNormals();
 
-      // Create a new mesh with the extruded geometry and the same material
-      const extrudedMesh = new THREE.Mesh(extrudedGeometry, plane.material);
-      scene!.add(extrudedMesh);
+      const materialWithHeight = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        side: THREE.DoubleSide,
+      });
+
+      const meshWithHeight = new THREE.Mesh(
+        geometryWithHeight,
+        materialWithHeight
+      );
+      meshWithHeight.name = "plane";
+      scene!.add(meshWithHeight);
     }
   };
 

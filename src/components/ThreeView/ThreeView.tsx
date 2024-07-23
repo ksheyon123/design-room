@@ -11,6 +11,7 @@ import * as THREE from "three";
 import { ThreeContext } from "@/contexts/ThreeContext";
 import { useCamera } from "@/hooks/useCamera";
 import { useLine } from "@/hooks/useLine";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { useMesh } from "@/hooks/useMesh";
 
 const ThreeView: React.FC = () => {
@@ -53,10 +54,10 @@ const ThreeView: React.FC = () => {
 
       scene.add(plane);
 
-      // const controls = new OrbitControls(camera, renderer.domElement);
+      const controls = new OrbitControls(camera, renderer.domElement);
       camera.position.set(0, 10, 30);
       // camera.lookAt(new THREE.Vector3(0, 0, 0));
-      // controls.update();
+      controls.update();
 
       let handleId: any;
       const animate = () => {
@@ -71,8 +72,9 @@ const ThreeView: React.FC = () => {
             const { object } = intersect;
           }
         }
+        console.log(scene.children.length);
         addHeight();
-        // controls.update();
+        controls.update();
         renderer.render(scene, camera);
       };
       animate();
