@@ -194,7 +194,6 @@ export const useLine = (
           }
         });
         if (inRange.length > 0) {
-          console.log(inRange);
           return new THREE.Vector3(inRange[0].x, inRange[0].y, 0);
         }
       }
@@ -280,7 +279,6 @@ export const useLine = (
     const tempLines = scene?.children.filter((el) => el.name === "tempLine");
     tempLines.map((el) => el?.removeFromParent());
     if (isClickedRef.current && from && cursor) {
-      console.log("DRAW : ", cursor);
       const lines = createLineMaterial(from, cursor);
       scene?.add(lines);
     }
@@ -288,7 +286,6 @@ export const useLine = (
 
   const drawLine = (scene, from, to) => {
     if (!isClickedRef.current && from && to) {
-      console.log("DRAW : ", to);
       const lines = createLineMaterial(from, to, "line");
       scene?.add(lines);
       fromPointRef.current = null;

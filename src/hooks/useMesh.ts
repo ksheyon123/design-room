@@ -42,6 +42,7 @@ export const useMesh = (
   };
   const getVerticesFromPlane = (geometry) => {
     const positionAttribute = geometry.getAttribute("position");
+    console.log("positionAttribute", positionAttribute);
     const vertices: THREE.Vector3[] = [];
 
     for (let i = 0; i < positionAttribute.count; i++) {
@@ -129,7 +130,7 @@ export const useMesh = (
       side: THREE.DoubleSide,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.name = "plane";
+    plane.name = "hexahedron";
     return plane;
   };
 
@@ -169,66 +170,71 @@ export const useMesh = (
     return mouseCoordRef.current;
   };
 
-  const addHeight = () => {
+  const addHeight = (num) => {
+    console.log(num);
     const plane = scene!.children.filter(
-      (el) => el.name === "plane"
-    )[0] as THREE.Mesh<
+      (el) => el.name === "hexahedron"
+    ) as THREE.Mesh<
       THREE.PlaneGeometry,
       THREE.MeshBasicMaterial,
       THREE.Object3DEventMap
-    >;
-    if (plane) {
-      plane.removeFromParent();
-      let height = deltaRef.current;
-      const vertices = getVerticesFromPlane(plane.geometry);
+    >[];
+    if (plane.length > 0) {
+      const obj = plane[0];
+      let height = num;
+      const vertices = getVerticesFromPlane(obj.geometry);
 
-      console.log("vertices", vertices);
       // Define the positions for the new geometry with height
-      const baseVertices = vertices.map((v) => [v.x, v.y, v.z]).flat();
-      const topVertices = vertices.map((v) => [v.x, v.y, v.z + height]).flat();
-
-      const positionsWithHeight = new Float32Array([
-        ...baseVertices,
-        ...topVertices,
-        ...baseVertices.slice(0, 3),
-        ...topVertices.slice(0, 3),
-        ...baseVertices.slice(3, 6),
-        ...topVertices.slice(3, 6),
-        ...baseVertices.slice(6, 9),
-        ...topVertices.slice(6, 9),
-        ...baseVertices.slice(9, 12),
-        ...topVertices.slice(9, 12),
-      ]);
-
-      // Define the indices for the faces
-      const indices = [
-        // Bottom face
-        0, 1, 2, 2, 3, 0,
-        // Top face
-        4, 5, 6, 6, 7, 4,
-        // Side faces
-        0, 1, 5, 5, 4, 0, 1, 2, 6, 6, 5, 1, 2, 3, 7, 7, 6, 2, 3, 0, 4, 4, 7, 3,
+      const bottomVertices = [
+        vertices[0],
+        vertices[1],
+        vertices[2],
+        vertices[4],
       ];
+      const topVertices = bottomVertices
+        .map((v) => new THREE.Vector3(v.x, v.y, height))
+        .flat();
 
-      const geometryWithHeight = new THREE.BufferGeometry();
-      geometryWithHeight.setAttribute(
-        "position",
-        new THREE.BufferAttribute(positionsWithHeight, 3)
-      );
-      geometryWithHeight.setIndex(indices);
-      geometryWithHeight.computeVertexNormals();
-
-      const materialWithHeight = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        side: THREE.DoubleSide,
+      const hexahedronVertices = bottomVertices.concat(topVertices);
+      const positions = new Float32Array(8 * 3);
+      hexahedronVertices.forEach((vertex, i) => {
+        positions[i * 3] = vertex.x;
+        positions[i * 3 + 1] = vertex.y;
+        positions[i * 3 + 2] = vertex.z;
       });
 
-      const meshWithHeight = new THREE.Mesh(
-        geometryWithHeight,
-        materialWithHeight
+      // Define the faces using the indices of the vertices
+      const indices = [
+        // Bottom face
+        0, 1, 2, 0, 2, 3,
+        // Top face
+        4, 5, 6, 4, 6, 7,
+        // Sides
+        0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7,
+      ];
+
+      // Create the geometry
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3)
       );
-      meshWithHeight.name = "plane";
-      scene!.add(meshWithHeight);
+      geometry.setIndex(indices);
+
+      // Create a material
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        wireframe: true,
+      });
+      scene?.children.map((el) => {
+        if (el.name === "tempHedron") {
+          el.removeFromParent();
+        }
+      });
+      // Create the mesh
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.name = "tempHedron";
+      scene!.add(mesh);
     }
   };
 

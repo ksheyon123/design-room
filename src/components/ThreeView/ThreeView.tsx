@@ -45,14 +45,14 @@ const ThreeView: React.FC = () => {
   useEffect(() => {
     if (renderer && scene && camera) {
       canvasRef.current && canvasRef.current.appendChild(renderer.domElement);
-      const plane = createPlane(
-        "floor",
-        window.innerWidth,
-        window.innerHeight,
-        0xffffff
-      );
+      // const plane = createPlane(
+      //   "floor",
+      //   window.innerWidth,
+      //   window.innerHeight,
+      //   0xffffff
+      // );
 
-      scene.add(plane);
+      // scene.add(plane);
 
       const controls = new OrbitControls(camera, renderer.domElement);
       camera.position.set(0, 10, 30);
@@ -72,8 +72,7 @@ const ThreeView: React.FC = () => {
             const { object } = intersect;
           }
         }
-        console.log(scene.children.length);
-        addHeight();
+        // addHeight();
         controls.update();
         renderer.render(scene, camera);
       };
@@ -131,8 +130,12 @@ const ThreeView: React.FC = () => {
       }
     }
   }, [isRendered, canvasRef]);
-
-  return <div ref={canvasRef as RefObject<HTMLDivElement>} />;
+  return (
+    <>
+      <div>onClick</div>
+      <div ref={canvasRef as RefObject<HTMLDivElement>} />
+    </>
+  );
 };
 
 export { ThreeView };
