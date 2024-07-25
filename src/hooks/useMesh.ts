@@ -42,7 +42,6 @@ export const useMesh = (
   };
   const getVerticesFromPlane = (geometry) => {
     const positionAttribute = geometry.getAttribute("position");
-    console.log("positionAttribute", positionAttribute);
     const vertices: THREE.Vector3[] = [];
 
     for (let i = 0; i < positionAttribute.count; i++) {
@@ -162,7 +161,6 @@ export const useMesh = (
         deltaRef.current = 0;
       }, 100);
     };
-
     return getDelta;
   };
 
@@ -170,71 +168,73 @@ export const useMesh = (
     return mouseCoordRef.current;
   };
 
-  const addHeight = (num) => {
-    console.log(num);
-    const plane = scene!.children.filter(
-      (el) => el.name === "hexahedron"
-    ) as THREE.Mesh<
-      THREE.PlaneGeometry,
-      THREE.MeshBasicMaterial,
-      THREE.Object3DEventMap
-    >[];
-    if (plane.length > 0) {
-      const obj = plane[0];
-      let height = num;
-      const vertices = getVerticesFromPlane(obj.geometry);
+  const addHeight = () => {
+    if (deltaRef.current && isClickedRef.current) {
+      const plane = scene!.children.filter(
+        (el) => el.name === "hexahedron"
+      ) as THREE.Mesh<
+        THREE.PlaneGeometry,
+        THREE.MeshBasicMaterial,
+        THREE.Object3DEventMap
+      >[];
+      if (plane.length > 0) {
+        const obj = plane[0];
+        let height = -10;
+        const vertices = getVerticesFromPlane(obj.geometry);
 
-      // Define the positions for the new geometry with height
-      const bottomVertices = [
-        vertices[0],
-        vertices[1],
-        vertices[2],
-        vertices[4],
-      ];
-      const topVertices = bottomVertices
-        .map((v) => new THREE.Vector3(v.x, v.y, height))
-        .flat();
+        // Define the positions for the new geometry with height
+        const bottomVertices = [
+          vertices[0],
+          vertices[1],
+          vertices[2],
+          vertices[4],
+        ];
+        const topVertices = bottomVertices
+          .map((v) => new THREE.Vector3(v.x, v.y, height))
+          .flat();
 
-      const hexahedronVertices = bottomVertices.concat(topVertices);
-      const positions = new Float32Array(8 * 3);
-      hexahedronVertices.forEach((vertex, i) => {
-        positions[i * 3] = vertex.x;
-        positions[i * 3 + 1] = vertex.y;
-        positions[i * 3 + 2] = vertex.z;
-      });
+        const hexahedronVertices = bottomVertices.concat(topVertices);
+        const positions = new Float32Array(8 * 3);
+        hexahedronVertices.forEach((vertex, i) => {
+          positions[i * 3] = vertex.x;
+          positions[i * 3 + 1] = vertex.y;
+          positions[i * 3 + 2] = vertex.z;
+        });
 
-      // Define the faces using the indices of the vertices
-      const indices = [
-        // Bottom face
-        0, 1, 2, 0, 2, 3,
-        // Top face
-        4, 5, 6, 4, 6, 7,
-        // Sides
-        0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7,
-      ];
+        // Define the faces using the indices of the vertices
+        const indices = [
+          // Bottom face
+          0, 1, 2, 0, 2, 3,
+          // Top face
+          4, 5, 6, 4, 6, 7,
+          // Sides
+          0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4,
+          7,
+        ];
 
-      // Create the geometry
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute(
-        "position",
-        new THREE.BufferAttribute(positions, 3)
-      );
-      geometry.setIndex(indices);
+        // Create the geometry
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(positions, 3)
+        );
+        geometry.setIndex(indices);
 
-      // Create a material
-      const material = new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
-        wireframe: true,
-      });
-      scene?.children.map((el) => {
-        if (el.name === "tempHedron") {
-          el.removeFromParent();
-        }
-      });
-      // Create the mesh
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.name = "tempHedron";
-      scene!.add(mesh);
+        // Create a material
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x00ff00,
+          wireframe: true,
+        });
+        scene?.children.map((el) => {
+          if (el.name === "tempHedron") {
+            el.removeFromParent();
+          }
+        });
+        // Create the mesh
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = "tempHedron";
+        scene!.add(mesh);
+      }
     }
   };
 
