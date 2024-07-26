@@ -8,6 +8,11 @@ export const useMesh = (
 ) => {
   let { meshes } = useContext(ThreeContext);
   const guideMeshRef = useRef<THREE.Object3D>();
+  const mouseCoordRef = useRef<THREE.Vector3 | null>();
+  const isClickedRef = useRef<boolean>(false);
+  const deltaRef = useRef<number>(0);
+  const deltaSumRef = useRef<number>(0);
+  const isMetaLeftRef = useRef<boolean>(false);
 
   const createDot = () => {
     const geometry = new THREE.CircleGeometry(0.1, 32);
@@ -140,12 +145,6 @@ export const useMesh = (
     return plane;
   };
 
-  const mouseCoordRef = useRef<THREE.Vector3 | null>();
-  const isClickedRef = useRef<boolean>(false);
-  const deltaRef = useRef<number>(0);
-  const deltaSumRef = useRef<number>(0);
-  const isMetaLeftRef = useRef<boolean>(false);
-
   const onKeyboardKeydown = (e: KeyboardEvent) => {
     const { code } = e;
     switch (code) {
@@ -175,6 +174,7 @@ export const useMesh = (
   const onMouseKeyup = () => {
     // Get mouse coordinate
     isClickedRef.current = false;
+    mouseCoordRef.current = null;
   };
 
   const onMouseMove = () => {
@@ -258,6 +258,33 @@ export const useMesh = (
     }
   };
 
+  const outliner = (scene: THREE.Scene, camera: THREE.PerspectiveCamera) => {
+    console.log("Outliner : ", mouseCoordRef.current);
+
+    if (mouseCoordRef.current) {
+      const v = new THREE.Vector2(
+        mouseCoordRef.current?.x,
+        mouseCoordRef.current?.y
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(v, camera);
+      // calculate objects intersecting the picking ray
+      const intersects = raycaster.intersectObjects(scene.children);
+
+      for (let i = 0; i < intersects.length; i++) {
+        const { point, object } = intersects[i];
+        (
+          object as THREE.Mesh<
+            THREE.BufferGeometry<THREE.NormalBufferAttributes>,
+            THREE.MeshBasicMaterial,
+            THREE.Object3DEventMap
+          >
+        ).material.color.set(0x000000);
+        // return { point, object };
+      }
+    }
+  };
+
   const setCreatedObj = () => {};
 
   return {
@@ -275,6 +302,7 @@ export const useMesh = (
     combineMesh,
     addHeight,
     getVertices,
+    outliner,
 
     isMetaLeft: isMetaLeftRef.current,
   };

@@ -25,6 +25,7 @@ const ThreeView: React.FC = () => {
     // createPlane,
     getCoord,
     addHeight,
+    outliner,
   } = useMesh(scene, camera);
   const {
     zoomCamera,
@@ -66,6 +67,7 @@ const ThreeView: React.FC = () => {
         if (tempMesh) {
           scene.add(tempMesh);
         }
+        outliner(scene, camera);
         renderer.render(scene, camera);
       };
       animate();
@@ -126,7 +128,18 @@ const ThreeView: React.FC = () => {
       }
     }
   }, [isRendered, canvasRef]);
-  return <div ref={canvasRef as RefObject<HTMLDivElement>} />;
+  return (
+    <>
+      <div
+        onClick={() => {
+          // selectObj();
+        }}
+      >
+        Click
+      </div>
+      <div ref={canvasRef as RefObject<HTMLDivElement>} />
+    </>
+  );
 };
 
 export { ThreeView };
