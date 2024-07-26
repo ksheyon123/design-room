@@ -7,7 +7,14 @@ export const useMesh = (
   camera?: THREE.PerspectiveCamera
 ) => {
   let { meshes } = useContext(ThreeContext);
-  const guideMeshRef = useRef<THREE.Object3D>();
+  const guideMeshRef =
+    useRef<
+      THREE.Mesh<
+        THREE.BufferGeometry<THREE.NormalBufferAttributes>,
+        THREE.MeshBasicMaterial,
+        THREE.Object3DEventMap
+      >
+    >();
   const mouseCoordRef = useRef<THREE.Vector3 | null>();
   const isClickedRef = useRef<boolean>(false);
   const deltaRef = useRef<number>(0);
@@ -143,6 +150,7 @@ export const useMesh = (
     plane.name = "plane";
 
     meshes.plane = plane;
+    meshes.lines = [];
     return plane;
   };
 
@@ -284,7 +292,15 @@ export const useMesh = (
     }
   };
 
-  const setCreatedObj = () => {};
+  const setCreatedObj = () => {
+    if (guideMeshRef.current) {
+      guideMeshRef.current?.material.color.set(0x000000);
+      const { plane } = meshes;
+      plane?.removeFromParent();
+      meshes.plane = null;
+      meshes.hexahedron.push(guideMeshRef.current);
+    }
+  };
 
   return {
     onMouseKeydown,
@@ -302,7 +318,6 @@ export const useMesh = (
     addHeight,
     getVertices,
     outliner,
-
-    isMetaLeft: isMetaLeftRef.current,
+    setCreatedObj,
   };
 };

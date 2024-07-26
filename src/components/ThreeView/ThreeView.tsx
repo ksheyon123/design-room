@@ -26,6 +26,7 @@ const ThreeView: React.FC = () => {
     getCoord,
     addHeight,
     outliner,
+    setCreatedObj,
   } = useMesh(scene, camera);
   const {
     zoomCamera,
@@ -133,6 +134,7 @@ const ThreeView: React.FC = () => {
       <div
         onClick={() => {
           // selectObj();
+          setCreatedObj();
         }}
       >
         Click

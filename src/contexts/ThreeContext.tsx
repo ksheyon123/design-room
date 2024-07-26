@@ -24,8 +24,9 @@ type ThreeContext = {
 
 type Meshes = {
   lines: THREE.Object3D[];
+  tempLine: THREE.Object3D | null;
   plane: THREE.Object3D | null;
-  hexahedron: THREE.Object3D | null;
+  hexahedron: THREE.Object3D[];
 };
 
 export const ThreeContext = createContext<ThreeContext>({
@@ -34,8 +35,9 @@ export const ThreeContext = createContext<ThreeContext>({
   renderer: undefined,
   meshes: {
     lines: [],
+    tempLine: null,
     plane: null,
-    hexahedron: null,
+    hexahedron: [],
   },
 });
 
@@ -51,8 +53,9 @@ export const ThreeProvider: React.FC<IProps> = ({ children }) => {
 
   const meshesRef = useRef<Meshes>({
     lines: [],
+    tempLine: null,
     plane: null,
-    hexahedron: null,
+    hexahedron: [],
   });
   const { current } = meshesRef;
 

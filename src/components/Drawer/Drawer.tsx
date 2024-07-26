@@ -76,16 +76,12 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
           const newPointFrom = getNearest(from);
           const newPointTo = getNearest(to);
           const newPointCursor = getNearest(cursor);
-          const { to: withStraightTo } = chkLeftShift(newPointFrom, newPointTo); //cursor 없어도 될지도
+          const { to: withStraightTo } = chkLeftShift(newPointFrom, newPointTo);
           const { to: withStraightCursor } = chkLeftShift(
             newPointFrom,
             newPointCursor
-          ); //cursor 없어도 될지도
-          const guidanceLine = drawGuidance(
-            sceneRef.current,
-            newPointFrom,
-            withStraightCursor
           );
+          const guidanceLine = drawGuidance(newPointFrom, withStraightCursor);
           if (guidanceLine) {
             sceneRef.current.add(guidanceLine);
           }
@@ -93,7 +89,6 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
           if (realLine) {
             sceneRef.current.add(realLine);
           }
-          // }
 
           renderer.render(sceneRef.current, cameraRef.current);
         }

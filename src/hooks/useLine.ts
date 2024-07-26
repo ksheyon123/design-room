@@ -16,7 +16,6 @@ export const useLine = (
   const fromPointRef = useRef<THREE.Vector3 | null>(null);
   const cursorPRef = useRef<THREE.Vector3 | null>(null);
   const toPointRef = useRef<THREE.Vector3 | null>(null);
-  const activeObjRef = useRef<THREE.Object3D | null>(null);
 
   // For Checking the user click inside of the canvas
   const isClickedRef = useRef<boolean>(false);
@@ -29,18 +28,16 @@ export const useLine = (
    * @returns intersection coordinate
    */
   const getIntersectPoint = (v: THREE.Vector2, name = "floor") => {
-    if (camera && scene) {
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(v, camera);
-      // calculate objects intersecting the picking ray
-      const intersects = raycaster.intersectObjects(
-        scene.children.filter((el) => el.name === name)
-      );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(v, camera!);
+    // calculate objects intersecting the picking ray
+    const intersects = raycaster.intersectObjects(
+      scene!.children.filter((el) => el.name === name)
+    );
 
-      for (let i = 0; i < intersects.length; i++) {
-        const { point, object } = intersects[i];
-        return { point, object };
-      }
+    for (let i = 0; i < intersects.length; i++) {
+      const { point, object } = intersects[i];
+      return { point, object };
     }
   };
 
@@ -63,11 +60,17 @@ export const useLine = (
     const { code } = e as { code: SortOfCode };
     switch (code) {
       case "ShiftLeft":
+        isActiveKeys.current = {
+          ...isActiveKeys.current,
+          [code]: true,
+        };
       case "MetaLeft":
         isActiveKeys.current = {
           ...isActiveKeys.current,
           [code]: true,
         };
+        fromPointRef.current = null;
+        toPointRef.current = null;
     }
   };
 
@@ -225,10 +228,9 @@ export const useLine = (
     return false;
   };
 
-  const remover = (scene) => {
+  const remover = () => {
     let { lines } = meshes;
     let newLines: any[] = [];
-    console.log(lines);
     lines.map((el) => {
       if (el.userData.isActive) {
         el.removeFromParent();
@@ -236,7 +238,6 @@ export const useLine = (
         newLines.push(el);
       }
     });
-    console.log(newLines);
     meshes.lines = newLines;
   };
 
@@ -298,11 +299,14 @@ export const useLine = (
     return line;
   };
 
-  const drawGuidance = (scene, from, cursor) => {
-    const tempLines = scene?.children.filter((el) => el.name === "tempLine");
-    tempLines.map((el) => el?.removeFromParent());
+  const drawGuidance = (from, cursor) => {
+    const { tempLine } = meshes;
+    if (tempLine) {
+      tempLine.removeFromParent();
+    }
     if (isClickedRef.current && from && cursor) {
-      const line = createLineMaterial(from, cursor);
+      const line = createLineMaterial(from, cursor, "tempLine");
+      meshes.tempLine = line;
       return line;
     }
   };
