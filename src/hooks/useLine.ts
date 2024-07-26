@@ -1,14 +1,9 @@
-import { useRef } from "react";
+import { useContext, useRef } from "react";
 import * as THREE from "three";
 import { useMesh } from "./useMesh";
+import { ThreeContext } from "@/contexts/ThreeContext";
 
 type SortOfCode = "ShiftLeft" | "MetaLeft" | "Ctrl" | "KeyZ" | "Escape";
-
-type LineType = THREE.Line<
-  THREE.BufferGeometry<THREE.NormalBufferAttributes>,
-  THREE.LineBasicMaterial,
-  THREE.Object3DEventMap
->;
 
 export const useLine = (
   width = 0,
@@ -16,7 +11,8 @@ export const useLine = (
   scene?: THREE.Scene,
   camera?: THREE.PerspectiveCamera
 ) => {
-  const { createDot, getVertices } = useMesh();
+  let { meshes } = useContext(ThreeContext);
+  const { getVertices } = useMesh();
   const fromPointRef = useRef<THREE.Vector3 | null>(null);
   const cursorPRef = useRef<THREE.Vector3 | null>(null);
   const toPointRef = useRef<THREE.Vector3 | null>(null);
@@ -138,14 +134,6 @@ export const useLine = (
     };
   };
 
-  const onPointOut = () => {
-    isClickedRef.current = false;
-    const tempLines = scene?.children.filter((el) => el.name === "tempLine");
-    if (tempLines) {
-      tempLines.map((el) => el.removeFromParent());
-    }
-  };
-
   const distanceFromPointToLine = (x1, y1, x2, y2, x0, y0) => {
     const numerator = Math.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1));
     const denominator = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
@@ -153,13 +141,11 @@ export const useLine = (
   };
 
   const getPointerToLineDistance = (to) => {
-    const lines = scene?.children.filter(
-      (el: any) => el.name === "line"
-    ) as LineType[];
+    const { lines } = meshes;
     if (lines && to) {
       const { x: x0, y: y0 } = to;
 
-      let arr: { line: LineType; distance: number }[] = new Array();
+      let arr: { line: any; distance: number }[] = new Array();
       lines.map((line) => {
         const [start, end] = getVertices(line);
         const { x: x1, y: y1 } = start;
@@ -176,9 +162,7 @@ export const useLine = (
 
   const getNearest = (point: THREE.Vector3 | null) => {
     if (point) {
-      const lines = scene?.children.filter(
-        (el: any) => el.name === "line"
-      ) as LineType[];
+      const { lines } = meshes;
       if (lines.length > 0) {
         let inRange: THREE.Vector3[] = [];
         lines.map((line) => {
@@ -266,30 +250,30 @@ export const useLine = (
    * @returns line object
    */
   const createLineMaterial = (from, to, name = "tempLine") => {
-    if (!!from && !!to) {
-      const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-      const geometry = new THREE.BufferGeometry().setFromPoints([from, to]);
-      const line = new THREE.Line(geometry, material);
-      line.name = name;
-      return line;
-    }
+    const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+    const geometry = new THREE.BufferGeometry().setFromPoints([from, to]);
+    const line = new THREE.Line(geometry, material);
+    line.name = name;
+    return line;
   };
 
   const drawGuidance = (scene, from, cursor) => {
     const tempLines = scene?.children.filter((el) => el.name === "tempLine");
     tempLines.map((el) => el?.removeFromParent());
     if (isClickedRef.current && from && cursor) {
-      const lines = createLineMaterial(from, cursor);
-      scene?.add(lines);
+      const line = createLineMaterial(from, cursor);
+      return line;
     }
   };
 
-  const drawLine = (scene, from, to) => {
+  const drawLine = (from, to) => {
     if (!isClickedRef.current && from && to) {
-      const lines = createLineMaterial(from, to, "line");
-      scene?.add(lines);
+      const line = createLineMaterial(from, to, "line");
+      const { lines } = meshes;
+      lines.push(line);
       fromPointRef.current = null;
       toPointRef.current = null;
+      return line;
     }
   };
 
@@ -297,7 +281,7 @@ export const useLine = (
     getRef,
 
     onPointMove,
-    onPointOut,
+    // onPointOut,
     onPointKeydown,
     onPointKeyup,
     onKeydownHandler,

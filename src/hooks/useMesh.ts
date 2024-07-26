@@ -1,10 +1,14 @@
-import { useRef } from "react";
+import { ThreeContext } from "@/contexts/ThreeContext";
+import { useContext, useRef } from "react";
 import * as THREE from "three";
 
 export const useMesh = (
   scene?: THREE.Scene,
   camera?: THREE.PerspectiveCamera
 ) => {
+  let { meshes } = useContext(ThreeContext);
+  const guideMeshRef = useRef<THREE.Object3D>();
+
   const createDot = () => {
     const geometry = new THREE.CircleGeometry(0.1, 32);
     const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -62,13 +66,14 @@ export const useMesh = (
     ];
   };
 
-  const combineMesh = (scene: THREE.Scene) => {
-    const lines = scene.children.filter((el) => el.name === "line");
+  const combineMesh = () => {
+    const { lines } = meshes;
+    // const lines = scene.children.filter((el) => el.name === "line");
 
-    // if (lines.length < 4) {
-    //   console.error("Not enough lines to form a plane");
-    //   return null;
-    // }
+    if (!lines) {
+      console.error("Not enough lines to form a plane");
+      return null;
+    }
 
     // Retrieve vertices from the lines
     const vertices: THREE.Vector3[] = [];
@@ -129,7 +134,9 @@ export const useMesh = (
       side: THREE.DoubleSide,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.name = "hexahedron";
+    plane.name = "plane";
+
+    meshes.plane = plane;
     return plane;
   };
 
@@ -191,75 +198,67 @@ export const useMesh = (
   };
 
   const addHeight = () => {
-    if (isClickedRef.current && isMetaLeftRef.current) {
-      const plane = scene!.children.filter(
-        (el) => el.name === "hexahedron"
-      ) as THREE.Mesh<
-        THREE.PlaneGeometry,
-        THREE.MeshBasicMaterial,
-        THREE.Object3DEventMap
-      >[];
-      if (plane.length > 0) {
-        deltaSumRef.current += deltaRef.current;
-        const obj = plane[0];
-        let height = deltaSumRef.current;
-        const vertices = getVerticesFromPlane(obj.geometry);
+    const { plane } = meshes;
+    if (isClickedRef.current && isMetaLeftRef.current && plane) {
+      deltaSumRef.current += deltaRef.current;
+      const obj = plane;
+      let height = deltaSumRef.current;
+      const vertices = getVerticesFromPlane((obj as any).geometry);
 
-        // Define the positions for the new geometry with height
-        const bottomVertices = [
-          vertices[0],
-          vertices[1],
-          vertices[2],
-          vertices[4],
-        ];
-        const topVertices = bottomVertices
-          .map((v) => new THREE.Vector3(v.x, v.y, height))
-          .flat();
+      // Define the positions for the new geometry with height
+      const bottomVertices = [
+        vertices[0],
+        vertices[1],
+        vertices[2],
+        vertices[4],
+      ];
+      const topVertices = bottomVertices
+        .map((v) => new THREE.Vector3(v.x, v.y, height))
+        .flat();
 
-        const hexahedronVertices = bottomVertices.concat(topVertices);
-        const positions = new Float32Array(8 * 3);
-        hexahedronVertices.forEach((vertex, i) => {
-          positions[i * 3] = vertex.x;
-          positions[i * 3 + 1] = vertex.y;
-          positions[i * 3 + 2] = vertex.z;
-        });
+      const hexahedronVertices = bottomVertices.concat(topVertices);
+      const positions = new Float32Array(8 * 3);
+      hexahedronVertices.forEach((vertex, i) => {
+        positions[i * 3] = vertex.x;
+        positions[i * 3 + 1] = vertex.y;
+        positions[i * 3 + 2] = vertex.z;
+      });
 
-        // Define the faces using the indices of the vertices
-        const indices = [
-          // Bottom face
-          0, 1, 2, 0, 2, 3,
-          // Top face
-          4, 5, 6, 4, 6, 7,
-          // Sides
-          0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4,
-          7,
-        ];
+      // Define the faces using the indices of the vertices
+      const indices = [
+        // Bottom face
+        0, 1, 2, 0, 2, 3,
+        // Top face
+        4, 5, 6, 4, 6, 7,
+        // Sides
+        0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7,
+      ];
 
-        // Create the geometry
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-          "position",
-          new THREE.BufferAttribute(positions, 3)
-        );
-        geometry.setIndex(indices);
+      // Create the geometry
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3)
+      );
+      geometry.setIndex(indices);
 
-        // Create a material
-        const material = new THREE.MeshBasicMaterial({
-          color: 0x00ff00,
-          wireframe: true,
-        });
-        scene?.children.map((el) => {
-          if (el.name === "tempHedron") {
-            el.removeFromParent();
-          }
-        });
-        // Create the mesh
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.name = "tempHedron";
-        scene!.add(mesh);
+      // Create a material
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        wireframe: true,
+      });
+      if (guideMeshRef.current) {
+        guideMeshRef.current.removeFromParent();
       }
+      // Create the mesh
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.name = "tempHexahedron";
+      guideMeshRef.current = mesh;
+      return mesh;
     }
   };
+
+  const setCreatedObj = () => {};
 
   return {
     onMouseKeydown,

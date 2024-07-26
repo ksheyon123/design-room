@@ -32,7 +32,6 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     onPointKeydown,
     onPointKeyup,
     outliner,
-    onPointOut,
     onKeydownHandler,
     onKeyupHandler,
     chkLeftShift,
@@ -66,19 +65,31 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
       let handleId: any;
       const animate = () => {
-        handleId = requestAnimationFrame(animate);
+        if (sceneRef.current && cameraRef.current) {
+          handleId = requestAnimationFrame(animate);
 
-        cameraRef.current!.position.set(0, 0, 50);
-        cameraRef.current!.lookAt(new THREE.Vector3(0, 0, 0));
+          cameraRef.current.position.set(0, 0, 50);
+          cameraRef.current.lookAt(new THREE.Vector3(0, 0, 0));
 
-        let { from, to, cursor } = getRef();
-        const newPointFrom = getNearest(from);
-        const newPointTo = getNearest(to);
-        outliner(cursor);
-        const { to: withStraightTo } = chkLeftShift(newPointFrom, newPointTo); //cursor 없어도 될지도
-        drawGuidance(sceneRef.current, newPointFrom, cursor);
-        drawLine(sceneRef.current, newPointFrom, withStraightTo);
-        renderer.render(sceneRef.current!, cameraRef.current!);
+          let { from, to, cursor } = getRef();
+          const newPointFrom = getNearest(from);
+          const newPointTo = getNearest(to);
+          outliner(cursor);
+          const { to: withStraightTo } = chkLeftShift(newPointFrom, newPointTo); //cursor 없어도 될지도
+          const guidanceLine = drawGuidance(
+            sceneRef.current,
+            newPointFrom,
+            cursor
+          );
+          if (guidanceLine) {
+            sceneRef.current.add(guidanceLine);
+          }
+          const realLine = drawLine(newPointFrom, withStraightTo);
+          if (realLine) {
+            sceneRef.current.add(realLine);
+          }
+          renderer.render(sceneRef.current, cameraRef.current);
+        }
       };
       animate();
       return () => cancelAnimationFrame(handleId);
@@ -90,14 +101,12 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
       canvasRef.current.addEventListener("mousedown", onPointKeydown);
       canvasRef.current.addEventListener("mousemove", onPointMove);
       canvasRef.current.addEventListener("mouseup", onPointKeyup);
-      canvasRef.current.addEventListener("mouseout", onPointOut);
       window.addEventListener("keydown", onKeydownHandler);
       window.addEventListener("keyup", onKeyupHandler);
       return () => {
         canvasRef.current?.removeEventListener("mousedown", onPointKeydown);
         canvasRef.current?.removeEventListener("mousemove", onPointMove);
         canvasRef.current?.removeEventListener("mouseup", onPointKeyup);
-        canvasRef.current?.removeEventListener("mouseout", onPointOut);
         window.addEventListener("keydown", onKeydownHandler);
         window.addEventListener("keyup", onKeyupHandler);
       };

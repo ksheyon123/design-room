@@ -49,7 +49,7 @@ export const ToolBox = ({ scene }: IProps) => {
             className={`${isClicked ? styles["active"] : ""}`}
             onClick={() => {
               if (onClick) {
-                const plane = onClick(scene);
+                const plane = onClick();
                 rootScene?.add(plane);
                 if (toggleModal) {
                   toggleModal();

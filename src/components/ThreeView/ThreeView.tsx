@@ -25,7 +25,6 @@ const ThreeView: React.FC = () => {
     // createPlane,
     getCoord,
     addHeight,
-    isMetaLeft,
   } = useMesh(scene, camera);
   const {
     zoomCamera,
@@ -63,14 +62,17 @@ const ThreeView: React.FC = () => {
           camera.lookAt(0, 0, 0);
         }
 
-        addHeight();
+        const tempMesh = addHeight();
+        if (tempMesh) {
+          scene.add(tempMesh);
+        }
         renderer.render(scene, camera);
       };
       animate();
       setIsRendered(true);
       return () => cancelAnimationFrame(handleId);
     }
-  }, [renderer, scene, camera, isMetaLeft]);
+  }, [renderer, scene, camera]);
 
   useEffect(() => {
     const mouseMoveEvent = onMouseMove();
