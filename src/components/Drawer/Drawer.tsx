@@ -35,7 +35,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     onKeydownHandler,
     onKeyupHandler,
     chkLeftShift,
-
+    selectLine,
     // TEST
     drawGuidance,
     drawLine,
@@ -72,14 +72,19 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
           cameraRef.current.lookAt(new THREE.Vector3(0, 0, 0));
 
           let { from, to, cursor } = getRef();
+          outliner(cursor);
           const newPointFrom = getNearest(from);
           const newPointTo = getNearest(to);
-          outliner(cursor);
+          const newPointCursor = getNearest(cursor);
           const { to: withStraightTo } = chkLeftShift(newPointFrom, newPointTo); //cursor 없어도 될지도
+          const { to: withStraightCursor } = chkLeftShift(
+            newPointFrom,
+            newPointCursor
+          ); //cursor 없어도 될지도
           const guidanceLine = drawGuidance(
             sceneRef.current,
             newPointFrom,
-            cursor
+            withStraightCursor
           );
           if (guidanceLine) {
             sceneRef.current.add(guidanceLine);
@@ -88,6 +93,8 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
           if (realLine) {
             sceneRef.current.add(realLine);
           }
+          // }
+
           renderer.render(sceneRef.current, cameraRef.current);
         }
       };

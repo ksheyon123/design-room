@@ -6,6 +6,7 @@ import { useMesh } from "@/hooks/useMesh";
 import { ThreeContext } from "@/contexts/ThreeContext";
 import { useModal } from "@/hooks/useModal";
 import { ModalContext } from "@/contexts/ModalContext";
+import { useLine } from "@/hooks/useLine";
 
 interface IProps {
   scene: THREE.Scene;
@@ -15,12 +16,14 @@ type ToolItem = {
   label: string;
   isClicked?: boolean;
   onClick?: Function;
+  remove?: Function;
 };
 
 export const ToolBox = ({ scene }: IProps) => {
   const { scene: rootScene } = useContext(ThreeContext);
   const { combineMesh, addHeight } = useMesh();
   const { toggleModal } = useContext(ModalContext);
+  const { remover } = useLine();
 
   const TOOL_ITEMS: ToolItem[] = [
     {
@@ -37,6 +40,10 @@ export const ToolBox = ({ scene }: IProps) => {
       label: "addHeight",
       onClick: addHeight,
     },
+    {
+      label: "remove",
+      remove: remover,
+    },
   ];
 
   const [items, setItems] = useState<ToolItem[]>(TOOL_ITEMS);
@@ -44,7 +51,7 @@ export const ToolBox = ({ scene }: IProps) => {
   return (
     <div className={styles["toolbox-container"]}>
       <ul>
-        {items.map(({ label, isClicked, onClick }, idx) => (
+        {items.map(({ label, isClicked, onClick, remove }, idx) => (
           <li
             className={`${isClicked ? styles["active"] : ""}`}
             onClick={() => {
@@ -54,6 +61,8 @@ export const ToolBox = ({ scene }: IProps) => {
                 if (toggleModal) {
                   toggleModal();
                 }
+              } else if (remove) {
+                remove();
               } else {
                 setItems((prev: ToolItem[]) => {
                   const newItems = {

@@ -16,6 +16,7 @@ export const useLine = (
   const fromPointRef = useRef<THREE.Vector3 | null>(null);
   const cursorPRef = useRef<THREE.Vector3 | null>(null);
   const toPointRef = useRef<THREE.Vector3 | null>(null);
+  const activeObjRef = useRef<THREE.Object3D | null>(null);
 
   // For Checking the user click inside of the canvas
   const isClickedRef = useRef<boolean>(false);
@@ -99,17 +100,21 @@ export const useLine = (
   };
 
   const onPointKeydown = (event) => {
-    if (!isClickedRef.current) {
-      const x = (event.offsetX / width) * 2 - 1;
-      const y = -(event.offsetY / height) * 2 + 1;
-      const data = getIntersectPoint(new THREE.Vector2(x, y));
-      const point = data?.point;
-      if (point) {
-        fromPointRef.current = point.clone();
+    const x = (event.offsetX / width) * 2 - 1;
+    const y = -(event.offsetY / height) * 2 + 1;
+    const data = getIntersectPoint(new THREE.Vector2(x, y));
+    const point = data?.point;
+    if (isActiveKeys.current?.MetaLeft) {
+      selectLine(point);
+    } else {
+      if (!isClickedRef.current) {
+        if (point) {
+          fromPointRef.current = point.clone();
+        }
       }
-    }
 
-    isClickedRef.current = !isClickedRef.current;
+      isClickedRef.current = !isClickedRef.current;
+    }
   };
 
   const onPointKeyup = (event: MouseEvent) => {
@@ -192,11 +197,47 @@ export const useLine = (
         prev.distance < curr.distance ? prev : curr
       );
       if (distance < 0.5) {
-        line.material.color.set(0x000000);
+        line.material.color.set(0xff0000);
       } else {
-        linesWithDistance.map(({ line }) => line.material.color.set(0xff0000));
+        linesWithDistance.map(({ line: otherLine }) => {
+          if (!otherLine.userData.isActive) {
+            otherLine.material.color.set(0x000000);
+          }
+        });
       }
     }
+  };
+
+  const selectLine = (coord) => {
+    if (isActiveKeys.current?.MetaLeft && coord) {
+      const linesWithDistance = getPointerToLineDistance(coord);
+      if (linesWithDistance && linesWithDistance.length > 0) {
+        const { line, distance } = linesWithDistance.reduce((prev, curr) =>
+          prev.distance < curr.distance ? prev : curr
+        );
+        if (distance < 0.5) {
+          line.material.color.set(0xff0000);
+          line.userData.isActive = !line.userData.isActive;
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const remover = (scene) => {
+    let { lines } = meshes;
+    let newLines: any[] = [];
+    console.log(lines);
+    lines.map((el) => {
+      if (el.userData.isActive) {
+        el.removeFromParent();
+      } else {
+        newLines.push(el);
+      }
+    });
+    console.log(newLines);
+    meshes.lines = newLines;
   };
 
   const chkLeftShift = (from, to) => {
@@ -281,16 +322,18 @@ export const useLine = (
     getRef,
 
     onPointMove,
-    // onPointOut,
     onPointKeydown,
     onPointKeyup,
     onKeydownHandler,
     onKeyupHandler,
+
     getIntersectPoint,
     chkLeftShift,
+    selectLine,
     outliner,
     drawGuidance,
     drawLine,
     getNearest,
+    remover,
   };
 };

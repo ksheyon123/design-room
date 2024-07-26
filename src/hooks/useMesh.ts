@@ -73,6 +73,7 @@ export const useMesh = (
 
   const combineMesh = () => {
     const { lines } = meshes;
+    console.log(lines);
     // const lines = scene.children.filter((el) => el.name === "line");
 
     if (!lines) {
@@ -259,8 +260,6 @@ export const useMesh = (
   };
 
   const outliner = (scene: THREE.Scene, camera: THREE.PerspectiveCamera) => {
-    console.log("Outliner : ", mouseCoordRef.current);
-
     if (mouseCoordRef.current) {
       const v = new THREE.Vector2(
         mouseCoordRef.current?.x,
