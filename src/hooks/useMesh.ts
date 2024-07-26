@@ -136,6 +136,26 @@ export const useMesh = (
   const mouseCoordRef = useRef<THREE.Vector3 | null>();
   const isClickedRef = useRef<boolean>(false);
   const deltaRef = useRef<number>(0);
+  const deltaSumRef = useRef<number>(0);
+  const isMetaLeftRef = useRef<boolean>(false);
+
+  const onKeyboardKeydown = (e: KeyboardEvent) => {
+    const { code } = e;
+    switch (code) {
+      case "MetaLeft":
+        isMetaLeftRef.current = true;
+        break;
+    }
+  };
+
+  const onKeyboardKeyup = (e: KeyboardEvent) => {
+    const { code } = e;
+    switch (code) {
+      case "MetaLeft":
+        isMetaLeftRef.current = false;
+        break;
+    }
+  };
 
   const onMouseKeydown = (event: MouseEvent) => {
     // Get mouse coordinate
@@ -165,11 +185,13 @@ export const useMesh = (
   };
 
   const getCoord = () => {
-    return mouseCoordRef.current;
+    return {
+      isMetaLeft: isMetaLeftRef.current,
+    };
   };
 
   const addHeight = () => {
-    if (deltaRef.current && isClickedRef.current) {
+    if (isClickedRef.current && isMetaLeftRef.current) {
       const plane = scene!.children.filter(
         (el) => el.name === "hexahedron"
       ) as THREE.Mesh<
@@ -178,8 +200,9 @@ export const useMesh = (
         THREE.Object3DEventMap
       >[];
       if (plane.length > 0) {
+        deltaSumRef.current += deltaRef.current;
         const obj = plane[0];
-        let height = -10;
+        let height = deltaSumRef.current;
         const vertices = getVerticesFromPlane(obj.geometry);
 
         // Define the positions for the new geometry with height
@@ -242,6 +265,8 @@ export const useMesh = (
     onMouseKeydown,
     onMouseKeyup,
     onMouseMove,
+    onKeyboardKeydown,
+    onKeyboardKeyup,
 
     createPlane,
     createOutline,
@@ -251,5 +276,7 @@ export const useMesh = (
     combineMesh,
     addHeight,
     getVertices,
+
+    isMetaLeft: isMetaLeftRef.current,
   };
 };

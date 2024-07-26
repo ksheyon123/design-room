@@ -20,9 +20,12 @@ const ThreeView: React.FC = () => {
     onMouseKeydown,
     onMouseKeyup,
     onMouseMove,
-    createPlane,
+    onKeyboardKeydown,
+    onKeyboardKeyup,
+    // createPlane,
     getCoord,
     addHeight,
+    isMetaLeft,
   } = useMesh(scene, camera);
   const {
     zoomCamera,
@@ -31,56 +34,43 @@ const ThreeView: React.FC = () => {
     handleMouseUpEvent,
     handleMouseMoveEvent,
   } = useCamera();
-  const {
-    getRef,
-    onPointKeydown,
-    onPointKeyup,
-    onPointMove,
-    getIntersectPoint,
-  } = useLine(window.innerWidth, window.innerHeight, scene, camera);
+  const { getIntersectPoint } = useLine(
+    window.innerWidth,
+    window.innerHeight,
+    scene,
+    camera
+  );
   const canvasRef = useRef<HTMLDivElement>();
-
   const [isRendered, setIsRendered] = useState<boolean>(false);
 
   useEffect(() => {
     if (renderer && scene && camera) {
+      const initialPosition = new THREE.Vector3(0, 0, 100);
       canvasRef.current && canvasRef.current.appendChild(renderer.domElement);
-      // const plane = createPlane(
-      //   "floor",
-      //   window.innerWidth,
-      //   window.innerHeight,
-      //   0xffffff
-      // );
-
-      // scene.add(plane);
-
-      // const controls = new OrbitControls(camera, renderer.domElement);
-      camera.position.set(0, 10, 30);
-      // camera.lookAt(new THREE.Vector3(0, 0, 0));
-      // controls.update();
+      camera.position.set(
+        initialPosition.x,
+        initialPosition.y,
+        initialPosition.z
+      );
 
       let handleId: any;
       const animate = () => {
         handleId = requestAnimationFrame(animate);
-        const coord = getCoord();
-        if (coord) {
-          const intersect = getIntersectPoint(
-            new THREE.Vector2(coord.x, coord.y),
-            "plane"
-          );
-          if (intersect) {
-            const { object } = intersect;
-          }
+        const { isMetaLeft } = getCoord();
+        if (!isMetaLeft) {
+          const { x, y, z } = moveCamera(new THREE.Vector3(0, 0, 0));
+          camera.position.set(x, y, z);
+          camera.lookAt(0, 0, 0);
         }
+
         addHeight();
-        // controls.update();
         renderer.render(scene, camera);
       };
       animate();
       setIsRendered(true);
       return () => cancelAnimationFrame(handleId);
     }
-  }, [renderer, scene, camera]);
+  }, [renderer, scene, camera, isMetaLeft]);
 
   useEffect(() => {
     const mouseMoveEvent = onMouseMove();
@@ -111,6 +101,8 @@ const ThreeView: React.FC = () => {
         });
         ref.addEventListener("mouseout", handleMouseUpEvent);
         ref.addEventListener("wheel", handleMouseWheelEvent);
+        window.addEventListener("keydown", onKeyboardKeydown);
+        window.addEventListener("keyup", onKeyboardKeyup);
         return () => {
           ref.removeEventListener("mousedown", (e) => {
             handleMouseDownEvent(e);
@@ -126,6 +118,8 @@ const ThreeView: React.FC = () => {
           });
           ref.removeEventListener("mouseout", handleMouseUpEvent);
           ref.removeEventListener("wheel", handleMouseWheelEvent);
+          window.removeEventListener("keydown", onKeyboardKeydown);
+          window.removeEventListener("keyup", onKeyboardKeyup);
         };
       }
     }

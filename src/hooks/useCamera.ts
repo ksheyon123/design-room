@@ -2,8 +2,8 @@ import { useRef } from "react";
 import * as THREE from "three";
 
 export const useCamera = () => {
-  const thetaRef = useRef<number>(90); // on xz plane
-  const piRef = useRef<number>(60); // about y Axis
+  const thetaRef = useRef<number>(0); // on xz plane
+  const piRef = useRef<number>(90); // about y Axis
   const mouseActiveRef = useRef<boolean>(false);
 
   /**
@@ -28,9 +28,9 @@ export const useCamera = () => {
     const theta = THREE.MathUtils.degToRad(thetaRef.current);
     const phi = THREE.MathUtils.degToRad(piRef.current);
     const direction = new THREE.Vector3(
-      Math.cos(phi) * Math.cos(theta), // X 방향
-      Math.sin(phi), // Y 방향
-      Math.cos(phi) * Math.sin(theta) // Z 방향
+      Math.cos(phi) * Math.cos(theta),
+      Math.cos(phi) * Math.sin(theta), // Y 방향
+      Math.sin(phi) // Z 방향
     );
     return {
       x: x + r * direction.x,
