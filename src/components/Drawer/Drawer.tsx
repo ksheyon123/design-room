@@ -20,22 +20,19 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   const canvasRef = useRef<HTMLDivElement>();
   const sceneRef = useRef<THREE.Scene>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
+  const rendererRef = useRef<THREE.WebGLRenderer>();
 
-  const { createCamera, moveCamera } = useCamera();
+  const { createCamera } = useCamera();
   const { createRenderer } = useRenederer();
-  const { createPlane, createOutline } = useMesh(
-    sceneRef.current,
-    cameraRef.current
-  );
+  const { createPlane } = useMesh(sceneRef.current, cameraRef.current);
   const {
     onPointMove,
     onPointKeydown,
     onPointKeyup,
-    outliner,
+    lineLighter,
     onKeydownHandler,
     onKeyupHandler,
     chkLeftShift,
-    selectLine,
     // TEST
     drawGuidance,
     drawLine,
@@ -48,8 +45,11 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   useEffect(() => {
     if (canvasRef) {
       setIsMounted(true);
+      const renderer = createRenderer(width, height);
       const scene = new THREE.Scene();
       const camera = createCamera(width, height);
+
+      rendererRef.current = renderer;
       sceneRef.current = scene;
       cameraRef.current = camera;
     }
@@ -57,8 +57,8 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
 
   useEffect(() => {
     if (isMounted) {
-      const renderer = createRenderer(width, height);
-      canvasRef.current && canvasRef.current.appendChild(renderer.domElement);
+      const renderer = rendererRef.current;
+      canvasRef.current && canvasRef.current.appendChild(renderer!.domElement);
 
       const plane = createPlane("floor", width, height, 0xffffff);
       sceneRef.current!.add(plane);
@@ -72,7 +72,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
           cameraRef.current.lookAt(new THREE.Vector3(0, 0, 0));
 
           let { from, to, cursor } = getRef();
-          outliner(cursor);
+          // outliner(cursor);
           const newPointFrom = getNearest(from);
           const newPointTo = getNearest(to);
           const newPointCursor = getNearest(cursor);
@@ -90,7 +90,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
             sceneRef.current.add(realLine);
           }
 
-          renderer.render(sceneRef.current, cameraRef.current);
+          renderer!.render(sceneRef.current, cameraRef.current);
         }
       };
       animate();
@@ -99,21 +99,42 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
   }, [isMounted]);
 
   useEffect(() => {
-    if (canvasRef.current) {
+    if (
+      isMounted &&
+      canvasRef.current &&
+      sceneRef.current &&
+      cameraRef.current &&
+      rendererRef.current
+    ) {
+      const renderer = rendererRef.current;
       canvasRef.current.addEventListener("mousedown", onPointKeydown);
-      canvasRef.current.addEventListener("mousemove", onPointMove);
+      canvasRef.current.addEventListener("mousemove", (e) => {
+        onPointMove(e);
+        lineLighter(e);
+        renderer.render(sceneRef.current!, cameraRef.current!);
+      });
       canvasRef.current.addEventListener("mouseup", onPointKeyup);
       window.addEventListener("keydown", onKeydownHandler);
       window.addEventListener("keyup", onKeyupHandler);
       return () => {
         canvasRef.current?.removeEventListener("mousedown", onPointKeydown);
-        canvasRef.current?.removeEventListener("mousemove", onPointMove);
+        canvasRef.current?.removeEventListener("mousemove", (e) => {
+          onPointMove(e);
+          lineLighter(e);
+          renderer.render(sceneRef.current!, cameraRef.current!);
+        });
         canvasRef.current?.removeEventListener("mouseup", onPointKeyup);
         window.addEventListener("keydown", onKeydownHandler);
         window.addEventListener("keyup", onKeyupHandler);
       };
     }
-  }, [canvasRef.current]);
+  }, [
+    canvasRef.current,
+    isMounted,
+    sceneRef.current,
+    cameraRef.current,
+    rendererRef.current,
+  ]);
 
   return (
     <StyledDrawer $width={width} $height={height}>

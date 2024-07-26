@@ -107,17 +107,14 @@ export const useLine = (
     const y = -(event.offsetY / height) * 2 + 1;
     const data = getIntersectPoint(new THREE.Vector2(x, y));
     const point = data?.point;
-    if (isActiveKeys.current?.MetaLeft) {
-      selectLine(point);
-    } else {
-      if (!isClickedRef.current) {
-        if (point) {
-          fromPointRef.current = point.clone();
-        }
-      }
 
-      isClickedRef.current = !isClickedRef.current;
+    if (!isClickedRef.current) {
+      if (point) {
+        fromPointRef.current = point.clone();
+      }
     }
+
+    isClickedRef.current = !isClickedRef.current;
   };
 
   const onPointKeyup = (event: MouseEvent) => {
@@ -193,13 +190,26 @@ export const useLine = (
     }
   };
 
-  const outliner = (to) => {
-    const linesWithDistance = getPointerToLineDistance(to);
+  const convertCoord = (event) => {
+    const x = (event.offsetX / width) * 2 - 1;
+    const y = -(event.offsetY / height) * 2 + 1;
+    const data = getIntersectPoint(new THREE.Vector2(x, y));
+    const point = data?.point;
+    return point;
+  };
+
+  const lineLighter = (event) => {
+    const point = convertCoord(event);
+    const linesWithDistance = getPointerToLineDistance(point);
+
     if (linesWithDistance && linesWithDistance.length > 0) {
       const { line, distance } = linesWithDistance.reduce((prev, curr) =>
         prev.distance < curr.distance ? prev : curr
       );
-      if (distance < 0.5) {
+      if (isActiveKeys.current?.MetaLeft) {
+        line.material.color.set(0xff0000);
+        line.userData.isActive = !line.userData.isActive;
+      } else if (distance < 0.5) {
         line.material.color.set(0xff0000);
       } else {
         linesWithDistance.map(({ line: otherLine }) => {
@@ -209,23 +219,6 @@ export const useLine = (
         });
       }
     }
-  };
-
-  const selectLine = (coord) => {
-    if (isActiveKeys.current?.MetaLeft && coord) {
-      const linesWithDistance = getPointerToLineDistance(coord);
-      if (linesWithDistance && linesWithDistance.length > 0) {
-        const { line, distance } = linesWithDistance.reduce((prev, curr) =>
-          prev.distance < curr.distance ? prev : curr
-        );
-        if (distance < 0.5) {
-          line.material.color.set(0xff0000);
-          line.userData.isActive = !line.userData.isActive;
-          return true;
-        }
-      }
-    }
-    return false;
   };
 
   const remover = () => {
@@ -333,8 +326,7 @@ export const useLine = (
 
     getIntersectPoint,
     chkLeftShift,
-    selectLine,
-    outliner,
+    lineLighter,
     drawGuidance,
     drawLine,
     getNearest,
