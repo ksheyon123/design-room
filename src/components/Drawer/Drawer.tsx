@@ -29,7 +29,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
     onPointMove,
     onPointKeydown,
     onPointKeyup,
-    lineLighter,
+    changeLineColor,
     onKeydownHandler,
     onKeyupHandler,
     chkLeftShift,
@@ -110,7 +110,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
       canvasRef.current.addEventListener("mousedown", onPointKeydown);
       canvasRef.current.addEventListener("mousemove", (e) => {
         onPointMove(e);
-        lineLighter(e);
+        changeLineColor(e);
         renderer.render(sceneRef.current!, cameraRef.current!);
       });
       canvasRef.current.addEventListener("mouseup", onPointKeyup);
@@ -120,7 +120,7 @@ export const Drawer: React.FC<IProps> = ({ width, height, onClick }) => {
         canvasRef.current?.removeEventListener("mousedown", onPointKeydown);
         canvasRef.current?.removeEventListener("mousemove", (e) => {
           onPointMove(e);
-          lineLighter(e);
+          changeLineColor(e);
           renderer.render(sceneRef.current!, cameraRef.current!);
         });
         canvasRef.current?.removeEventListener("mouseup", onPointKeyup);

@@ -139,32 +139,6 @@ export const useLine = (
     };
   };
 
-  const distanceFromPointToLine = (x1, y1, x2, y2, x0, y0) => {
-    const numerator = Math.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1));
-    const denominator = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-    return numerator / denominator;
-  };
-
-  const getPointerToLineDistance = (to) => {
-    const { lines } = meshes;
-    if (lines && to) {
-      const { x: x0, y: y0 } = to;
-
-      let arr: { line: any; distance: number }[] = new Array();
-      lines.map((line) => {
-        const [start, end] = getVertices(line);
-        const { x: x1, y: y1 } = start;
-        const { x: x2, y: y2 } = end;
-        const distance = distanceFromPointToLine(x1, y1, x2, y2, x0, y0);
-        if (distance) {
-          arr.push({ line, distance });
-        }
-      });
-
-      return arr;
-    }
-  };
-
   const getNearest = (point: THREE.Vector3 | null) => {
     if (point) {
       const { lines } = meshes;
@@ -198,23 +172,43 @@ export const useLine = (
     return point;
   };
 
-  const lineLighter = (event) => {
-    const point = convertCoord(event);
-    const linesWithDistance = getPointerToLineDistance(point);
+  const getPointerToLineDistance = (line, to) => {
+    const { x: x0, y: y0 } = to;
+    const point = new THREE.Vector3(x0, y0, 0);
+    const [start, end] = getVertices(line);
+    const lineVector = new THREE.Vector3().subVectors(end, start);
+    const v = new THREE.Vector3().subVectors(point, end);
+    const crossProduct = new THREE.Vector3().crossVectors(lineVector, v);
+    const distance = crossProduct.length() / lineVector.length();
+    return distance;
+  };
 
-    if (linesWithDistance && linesWithDistance.length > 0) {
+  const changeLineColor = (event) => {
+    const point = convertCoord(event);
+    const { lines } = meshes;
+    const linesWithDistance = lines.map((line) => {
+      const distance = getPointerToLineDistance(line, point);
+      return {
+        line,
+        distance,
+      };
+    });
+    if (point && linesWithDistance.length > 0) {
       const { line, distance } = linesWithDistance.reduce((prev, curr) =>
         prev.distance < curr.distance ? prev : curr
       );
+      // Command Key 클릭 후 Keydown 시
       if (isActiveKeys.current?.MetaLeft) {
-        line.material.color.set(0xff0000);
+        (line as any).material.color.set(0xff0000);
         line.userData.isActive = !line.userData.isActive;
+        // Mouse Cursor와 line 사이의 간격이 0.5 pixel 이하인 경우,
       } else if (distance < 0.5) {
-        line.material.color.set(0xff0000);
+        (line as any).material.color.set(0xff0000);
       } else {
+        // 그 외의 경우 색상 원상 복구
         linesWithDistance.map(({ line: otherLine }) => {
           if (!otherLine.userData.isActive) {
-            otherLine.material.color.set(0x000000);
+            (otherLine as any).material.color.set(0x000000);
           }
         });
       }
@@ -262,7 +256,7 @@ export const useLine = (
             };
           } else if (
             (180 >= angle && angle >= 135) ||
-            (-180 >= angle && angle <= -135)
+            (-180 <= angle && angle <= -135)
           ) {
             return {
               to: {
@@ -326,7 +320,7 @@ export const useLine = (
 
     getIntersectPoint,
     chkLeftShift,
-    lineLighter,
+    changeLineColor,
     drawGuidance,
     drawLine,
     getNearest,
